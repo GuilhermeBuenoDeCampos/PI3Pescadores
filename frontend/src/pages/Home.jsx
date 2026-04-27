@@ -2,23 +2,32 @@ import { useMemo, useState } from 'react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
+import PriceFilter from '../components/PriceFilter';
 import SectionTitle from '../components/SectionTitle';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { PRODUCTS } from '../data/products';
-import { filterProducts, getProductCategories } from '../utils/productUtils';
+import { filterProducts, getProductCategories, sortProductsByPrice } from '../utils/productUtils';
 import styles from './Home.module.css';
 
 function Home() {
   const [searchText, setSearchText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [sortOrder, setSortOrder] = useState('none'); // 'none', 'asc', 'desc'
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(1000); // Valor alto suficiente
   const categories = useMemo(() => getProductCategories(PRODUCTS), []);
 
-  const filteredProducts = useMemo(
-    () => filterProducts(PRODUCTS, activeCategory, searchQuery),
-    [activeCategory, searchQuery]
-  );
+  const filteredProducts = useMemo(() => {
+    let products = filterProducts(PRODUCTS, activeCategory, searchQuery, minPrice, maxPrice);
+    if (sortOrder === 'asc') {
+      products = sortProductsByPrice(products, true);
+    } else if (sortOrder === 'desc') {
+      products = sortProductsByPrice(products, false);
+    }
+    return products;
+  }, [activeCategory, searchQuery, minPrice, maxPrice, sortOrder]);
 
   function handleSearchSubmit(event) {
     event.preventDefault();
@@ -60,6 +69,15 @@ function Home() {
               categories={categories}
               activeCategory={activeCategory}
               onChange={setActiveCategory}
+            />
+
+            <PriceFilter
+              sortOrder={sortOrder}
+              onSortChange={setSortOrder}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onMinPriceChange={setMinPrice}
+              onMaxPriceChange={setMaxPrice}
             />
           </div>
 

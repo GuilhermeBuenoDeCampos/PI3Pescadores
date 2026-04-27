@@ -26,14 +26,44 @@ export function getRelatedProducts(products, currentProduct, limit = 4) {
 }
 
 /**
- * Filtra produtos por categoria e termo de busca.
+ * Converte string de preço para número.
  */
-export function filterProducts(products, selectedCategory, searchTerm) {
+export function parsePrice(priceString) {
+  return parseFloat(priceString.replace('R$ ', '').replace(',', '.'));
+}
+
+/**
+ * Ordena produtos por preço.
+ */
+export function sortProductsByPrice(products, ascending) {
+  return [...products].sort((a, b) => {
+    const priceA = parsePrice(a.price);
+    const priceB = parsePrice(b.price);
+    return ascending ? priceA - priceB : priceB - priceA;
+  });
+}
+
+/**
+ * Filtra produtos por intervalo de preço.
+ */
+export function filterProductsByPrice(products, min, max) {
+  return products.filter((product) => {
+    const price = parsePrice(product.price);
+    return price >= min && price <= max;
+  });
+}
+
+/**
+ * Filtra produtos por categoria, termo de busca e preço.
+ */
+export function filterProducts(products, selectedCategory, searchTerm, minPrice, maxPrice) {
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   return products.filter((product) => {
     const categoryMatches = selectedCategory === 'Todos' || product.category === selectedCategory;
     const searchMatches = product.name.toLowerCase().includes(normalizedSearch);
-    return categoryMatches && searchMatches;
+    const price = parsePrice(product.price);
+    const priceMatches = price >= minPrice && price <= maxPrice;
+    return categoryMatches && searchMatches && priceMatches;
   });
 }
