@@ -68,7 +68,7 @@ function Home() {
       }
       
       // Filtro por preço
-      filtered = filtered.filter(p => p.preco >= minPrice && p.preco <= maxPrice);
+      filtered = filtered.filter(p => p.preco_venda >= minPrice && p.preco_venda <= maxPrice);
       
       // Ordenação por preço
       if (sortOrder === 'asc') {

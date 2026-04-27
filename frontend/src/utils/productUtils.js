@@ -37,8 +37,8 @@ export function parsePrice(priceString) {
  */
 export function sortProductsByPrice(products, ascending) {
   return [...products].sort((a, b) => {
-    const priceA = parsePrice(a.price);
-    const priceB = parsePrice(b.price);
+    const priceA = a.preco_venda || 0;
+    const priceB = b.preco_venda || 0;
     return ascending ? priceA - priceB : priceB - priceA;
   });
 }
