@@ -1,0 +1,92 @@
+.homeMain {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+}
+
+.heroSection {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2.5rem;
+  padding: 2.5rem 0 3rem;
+}
+
+.heroText {
+  max-width: 540px;
+}
+
+.heroBadge {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: #f6e2c6;
+  color: #a86b30;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+}
+
+.heroText h1 {
+  margin: 0;
+  font-size: clamp(2.3rem, 4vw, 3.6rem);
+  line-height: 1.05;
+  color: #2b261e;
+  font-family: 'Georgia', serif;
+}
+
+.heroText p {
+  margin-top: 1.25rem;
+  color: #675c4c;
+  max-width: 540px;
+  font-size: 1rem;
+}
+
+.heroImageWrapper {
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 18px 40px rgba(107, 81, 54, 0.1);
+}
+
+.heroImageWrapper img {
+  width: 100%;
+  border-radius: 1.8rem;
+  object-fit: cover;
+}
+
+.catalogSection {
+  padding-bottom: 2rem;
+}
+
+.controls {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.7rem;
+}
+
+@media (max-width: 1080px) {
+  .heroSection {
+    grid-template-columns: 1fr;
+  }
+  .productGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .homeMain {
+    padding: 0 1.2rem 2rem;
+  }
+  .productGrid {
+    grid-template-columns: 1fr;
+  }
+}
