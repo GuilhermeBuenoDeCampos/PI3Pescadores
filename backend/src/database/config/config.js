@@ -1,3 +1,8 @@
+const path = require('path');
+const loadEnv = require('../../config/loadEnv');
+
+loadEnv(path.resolve(__dirname, '../../../.env'));
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
