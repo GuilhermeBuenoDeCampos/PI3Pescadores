@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const routes = require('./routes');
 const notFound = require('./middlewares/notFound');
 const errorHandler = require('./middlewares/errorHandler');
@@ -34,6 +35,8 @@ app.use((req, res, next) => {
 
   return next();
 });
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/health', (req, res) => {
   res.json({

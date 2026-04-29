@@ -6,12 +6,14 @@ import ProductDetailsCard from '../components/ProductDetailsCard';
 import RelatedProducts from '../components/RelatedProducts';
 import Footer from '../components/Footer';
 import styles from './ProductPage.module.css';
+import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
 
 function ProductPage() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
+  const [mainImgSrc, setMainImgSrc] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,7 +23,8 @@ function ProductPage() {
         setLoading(true);
         const productData = await fetchProductById(id);
         setProduct(productData);
-        setActiveImage(productData.imagens?.[0]?.url || '');
+        setActiveImage(productData.imagens?.[0]?.url || semImagem);
+        setMainImgSrc(productData.imagens?.[0]?.url || semImagem);
       } catch (err) {
         console.error('Erro ao carregar produto:', err);
         setError(err.message);
@@ -45,6 +48,10 @@ function ProductPage() {
 
     loadAllProducts();
   }, []);
+
+  useEffect(() => {
+    setMainImgSrc(activeImage);
+  }, [activeImage]);
 
   useEffect(() => {
     if (product) {
@@ -94,7 +101,7 @@ function ProductPage() {
         <section className={styles.productLayout}>
           <div className={styles.imageColumn}>
             <div className={styles.mainImage}>
-              <img src={activeImage} alt={product.nome} />
+              <img src={mainImgSrc} alt={product.nome} onError={() => setMainImgSrc(semImagem)} />
             </div>
 
             <div className={styles.thumbnailRow}>

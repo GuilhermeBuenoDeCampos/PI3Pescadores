@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import Header from '../components/Header';
+import BannerCarousel from '../components/BannerCarousel';
 import SearchBar from '../components/SearchBar';
 import CategoryFilter from '../components/CategoryFilter';
 import PriceFilter from '../components/PriceFilter';
@@ -103,10 +104,7 @@ function Home() {
           </div>
 
           <div className={styles.heroImageWrapper}>
-            <img
-              src="https://images.unsplash.com/photo-1521863453002-3ea1347aa3c0?auto=format&fit=crop&w=900&q=80"
-              alt="Banner principal de artigos religiosos"
-            />
+            <BannerCarousel />
           </div>
         </section>
 

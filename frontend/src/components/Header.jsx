@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
 import styles from './Header.module.css';
+import logo from '../assets/logo/logo.png';
 
 function Header() {
   return (
     <header className={styles.header}> 
       <div className={styles.brand}>
-        <div className={styles.logoMark}>TP</div>
+        <img src={logo} alt="Logo Tres Pescadores" className={styles.logoMark} />
         <div>
           <Link to="/" className={styles.title}>
-            Tres Pescadores
+            Tres Pescadores Store
           </Link>
           <p className={styles.subtitle}>Artigos religiosos para fé e devoção</p>
         </div>
