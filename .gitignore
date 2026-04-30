@@ -30,6 +30,3 @@ build/
 .next/
 out/
 
-# Uploads
-backend/uploads/*
-!backend/uploads/.gitkeep
