@@ -1,4 +1,11 @@
-const API_URL = 'http://localhost:3000/api';
+export const BACKEND_URL = 'http://localhost:3000';
+const API_URL = `${BACKEND_URL}/api`;
+
+export function getImageUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${BACKEND_URL}${url}`;
+}
 
 export async function fetchProducts(filters = {}) {
   const params = new URLSearchParams();

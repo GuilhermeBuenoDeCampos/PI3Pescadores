@@ -36,7 +36,12 @@ exports.detalhar = asyncHandler(async (req, res) => {
 });
 
 exports.criar = asyncHandler(async (req, res) => {
-  const produto = await produtoService.criarProduto(req.body);
+  const fileUrls = (req.files || []).map(file => `/uploads/${file.filename}`);
+  const payload = {
+    ...req.body,
+    imagens: fileUrls
+  };
+  const produto = await produtoService.criarProduto(payload);
 
   res.status(201).json({
     data: produto,

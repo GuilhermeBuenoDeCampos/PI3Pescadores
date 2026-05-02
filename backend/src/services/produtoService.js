@@ -179,7 +179,17 @@ exports.criarProduto = async (payload) => {
   const altura = toNumberOrNull(payload.altura);
   const largura = toNumberOrNull(payload.largura);
   const profundidade = toNumberOrNull(payload.profundidade);
-  const idCategoria = Number(payload.id_categoria);
+  
+  // se for array de categorias (ex: multi-select no front), pega a primeira
+  let idCategoria = payload.id_categoria;
+  if (Array.isArray(idCategoria)) {
+    idCategoria = parseInt(idCategoria[0], 10);
+  } else if (typeof idCategoria === 'string' && idCategoria.includes(',')) {
+    idCategoria = parseInt(idCategoria.split(',')[0], 10);
+  } else {
+    idCategoria = Number(idCategoria);
+  }
+
   const ativo = toBooleanOrDefault(payload.ativo, true);
   const imagens = Array.isArray(payload.imagens) ? payload.imagens : [];
 

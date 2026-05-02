@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProductById, fetchProducts } from '../services/api';
+import { fetchProductById, fetchProducts, getImageUrl } from '../services/api';
 import Header from '../components/Header';
 import ProductDetailsCard from '../components/ProductDetailsCard';
 import RelatedProducts from '../components/RelatedProducts';
@@ -23,8 +23,8 @@ function ProductPage() {
         setLoading(true);
         const productData = await fetchProductById(id);
         setProduct(productData);
-        setActiveImage(productData.imagens?.[0]?.url || semImagem);
-        setMainImgSrc(productData.imagens?.[0]?.url || semImagem);
+        setActiveImage(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
+        setMainImgSrc(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
       } catch (err) {
         console.error('Erro ao carregar produto:', err);
         setError(err.message);
@@ -109,10 +109,14 @@ function ProductPage() {
                 <button
                   key={imagem.id}
                   type="button"
-                  className={`${styles.thumbnailButton} ${activeImage === imagem.url ? styles.active : ''}`}
-                  onClick={() => setActiveImage(imagem.url)}
+                  className={`${styles.thumbnailButton} ${activeImage === getImageUrl(imagem.url) ? styles.active : ''}`}
+                  onClick={() => {
+                    const imgUrl = getImageUrl(imagem.url);
+                    setActiveImage(imgUrl);
+                    setMainImgSrc(imgUrl);
+                  }}
                 >
-                  <img src={imagem.url} alt={product.nome} />
+                  <img src={getImageUrl(imagem.url)} alt={product.nome} />
                 </button>
               ))}
             </div>
