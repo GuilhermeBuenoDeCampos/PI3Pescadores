@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchCategories, fetchProducts } from '../services/api';
+import { fetchCategories, fetchProducts, fetchProductById, getImageUrl } from '../services/api';
 import styles from './StockManagement.module.css';
 
 const StockManagement = () => {
@@ -9,6 +9,22 @@ const StockManagement = () => {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [productFilter, setProductFilter] = useState('');
+  const [editProduct, setEditProduct] = useState(null);
+  // Single launch
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [launchQuantity, setLaunchQuantity] = useState(0);
+  const [singleSuggestions, setSingleSuggestions] = useState([]);
+  const [singleSelectedProduct, setSingleSelectedProduct] = useState(null);
+  const [singleActiveIndex, setSingleActiveIndex] = useState(-1);
+  // Mass launch
+  const [massItems, setMassItems] = useState([]); // { id_produto, quantidade }
+  const [massSearchTerm, setMassSearchTerm] = useState('');
+  const [massSuggestions, setMassSuggestions] = useState([]);
+  const [massSelectedProduct, setMassSelectedProduct] = useState(null);
+  const [massQtyInput, setMassQtyInput] = useState('');
+  const [massActiveIndex, setMassActiveIndex] = useState(-1);
 
   const loadData = async () => {
     try {
@@ -88,21 +104,39 @@ const StockManagement = () => {
     });
 
     try {
-      const response = await fetch('http://localhost:3000/api/produtos', {
-        method: 'POST',
-        body: formData,
-      });
+      let response;
+      if (editProduct && editProduct.id) {
+        // use POST to update when sending multipart FormData from the browser
+        response = await fetch(`http://localhost:3000/api/produtos/${editProduct.id}`, {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        response = await fetch('http://localhost:3000/api/produtos', {
+          method: 'POST',
+          body: formData,
+        });
+      }
 
       if (!response.ok) {
-        throw new Error('Falha ao criar produto');
+        let serverMsg = 'Falha ao salvar produto';
+        try {
+          const body = await response.json();
+          if (body && body.error && body.error.message) serverMsg = body.error.message;
+          else if (body && body.message) serverMsg = body.message;
+        } catch (e) {
+          // ignore JSON parse error
+        }
+        throw new Error(serverMsg);
       }
 
       alert('Produto salvo com sucesso!');
+      setEditProduct(null);
       closeModal();
       loadData(); // Recarrega a listagem de produtos
     } catch (err) {
       console.error(err);
-      alert('Erro ao salvar produto!');
+      alert('Erro ao salvar produto! ' + (err.message || ''));
     }
   };
 
@@ -130,6 +164,171 @@ const StockManagement = () => {
     }
   };
 
+  // Single product launch
+  const handleSingleLaunch = async (e) => {
+    e.preventDefault();
+    if (!selectedProductId || !Number.isInteger(Number(launchQuantity)) || Number(launchQuantity) <= 0) {
+      alert('Selecione um produto válido e informe uma quantidade maior que zero.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/produtos/${selectedProductId}/movimentacoes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'entrada', motivo: 'compra', quantidade: Number(launchQuantity) }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err && err.error ? err.error.message : 'Falha ao lançar produto');
+      }
+
+      alert('Lançamento realizado com sucesso');
+      closeModal();
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao lançar produto: ' + err.message);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    if (!value) {
+      setSingleSuggestions([]);
+      return;
+    }
+    const q = value.toLowerCase();
+    const suggestions = products
+      .filter(p => p.nome && p.nome.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(p => ({ id: p.id, nome: p.nome }));
+    setSingleSuggestions(suggestions);
+  };
+
+  const selectSingleSuggestion = (product) => {
+    setSingleSelectedProduct(product);
+    setSelectedProductId(product.id);
+    setSearchTerm(product.nome);
+    setSingleSuggestions([]);
+    setSingleActiveIndex(-1);
+  };
+
+  const handleSingleKeyDown = (e) => {
+    if (!singleSuggestions || singleSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSingleActiveIndex((i) => Math.min(i + 1, singleSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSingleActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const sel = singleSuggestions[singleActiveIndex >= 0 ? singleActiveIndex : 0];
+      if (sel) selectSingleSuggestion(sel);
+    } else if (e.key === 'Escape') {
+      setSingleSuggestions([]);
+      setSingleActiveIndex(-1);
+    }
+  };
+
+  // Mass launch handlers
+  const addMassItem = (productObj, quantidade) => {
+    if (!productObj || !productObj.id) return;
+    const pid = Number(productObj.id);
+    const q = Number(quantidade);
+    if (!Number.isInteger(pid) || pid <= 0 || !Number.isInteger(q) || q <= 0) return;
+    // prevent duplicate SKU entries
+    setMassItems(prev => {
+      if (prev.some(item => Number(item.id_produto) === pid)) {
+        return prev.map(item => item.id_produto === pid ? { ...item, quantidade: Number(item.quantidade) + q } : item);
+      }
+      return [...prev, { id_produto: pid, quantidade: q, nome: productObj.nome }];
+    });
+    // reset inputs
+    setMassSearchTerm('');
+    setMassSuggestions([]);
+    setMassSelectedProduct(null);
+    setMassQtyInput('');
+  };
+
+  const handleMassSearchChange = (value) => {
+    setMassSearchTerm(value);
+    if (!value) {
+      setMassSuggestions([]);
+      return;
+    }
+    const q = value.toLowerCase();
+    const suggestions = products
+      .filter(p => p.nome && p.nome.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map(p => ({ id: p.id, nome: p.nome }));
+    setMassSuggestions(suggestions);
+  };
+
+  const selectMassSuggestion = (product) => {
+    setMassSelectedProduct(product);
+    setMassSearchTerm(product.nome);
+    setMassSuggestions([]);
+    setMassActiveIndex(-1);
+  };
+
+  const handleMassKeyDown = (e) => {
+    if (!massSuggestions || massSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMassActiveIndex((i) => Math.min(i + 1, massSuggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMassActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const sel = massSuggestions[massActiveIndex >= 0 ? massActiveIndex : 0];
+      if (sel) selectMassSuggestion(sel);
+    } else if (e.key === 'Escape') {
+      setMassSuggestions([]);
+      setMassActiveIndex(-1);
+    }
+  };
+
+  const handleMassLaunch = async (e) => {
+    e.preventDefault();
+    if (!massItems.length) {
+      alert('Adicione pelo menos um produto à lista.');
+      return;
+    }
+    // Validate quantities: must be positive integers
+    for (let i = 0; i < massItems.length; i++) {
+      const q = massItems[i].quantidade;
+      if (q === '' || q == null || !Number.isInteger(Number(q)) || Number(q) <= 0) {
+        alert(`Quantidade inválida para o produto ${massItems[i].nome || massItems[i].id_produto}. Informe um número inteiro maior que zero.`);
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/produtos/movimentacoes/massa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movimentacoes: massItems.map(item => ({ id_produto: item.id_produto, tipo: 'entrada', quantidade: Number(item.quantidade), motivo: 'compra' })) }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err && err.error ? err.error.message : 'Falha no lançamento em massa');
+      }
+
+      alert('Lançamento em massa realizado com sucesso');
+      setMassItems([]);
+      closeModal();
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Erro no lançamento em massa: ' + err.message);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.contentWrapper}>
@@ -150,9 +349,9 @@ const StockManagement = () => {
           {/* Actions Bar */}
           <div className={styles.actionsBar}>
             <span className={styles.actionsLabel}>⚡ Ações Rápidas:</span>
-            <button className={`${styles.btn} ${styles.btnBlue}`} onClick={() => setActiveModal('novo-produto')}>+ Novo Produto</button>
+            <button className={`${styles.btn} ${styles.btnBlue}`} onClick={() => { setEditProduct(null); setSelectedImages([]); setActiveModal('novo-produto'); }}>+ Novo Produto</button>
             <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('categorias')}>📋 Categorias</button>
-            <button className={`${styles.btn} ${styles.btnGreenSearch}`} onClick={() => setActiveModal('lancar-produtos')}>+ Lançar Produtos</button>
+            {/* botão 'Lançar Produtos' removido */}
             <button className={`${styles.btn} ${styles.btnYellow}`} onClick={() => setActiveModal('lancamento-massa')}>&equiv; Lançamento em Massa</button>
           </div>
 
@@ -180,7 +379,7 @@ const StockManagement = () => {
               <p className={styles.hint}>Visualize e gerencie todos os seus produtos</p>
             </div>
             <div>
-              <input type="text" placeholder="Buscar por nome ou SKU..." className={styles.searchInput} />
+              <input type="text" placeholder="Buscar por nome ou SKU..." className={styles.searchInput} value={productFilter} onChange={(e) => setProductFilter(e.target.value)} />
               <button className={`${styles.btn} ${styles.btnLight}`} style={{marginLeft: '12px'}}>Filtros</button>
             </div>
           </div>
@@ -197,14 +396,31 @@ const StockManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {products.map(product => (
+              {products.filter(p => {
+                if (!productFilter) return true;
+                const q = productFilter.toString().toLowerCase();
+                return (p.nome && p.nome.toLowerCase().includes(q)) || p.id.toString().includes(q);
+              }).map(product => (
                 <tr key={product.id} className={styles.tableBodyRow}>
                   <td>{product.nome}</td>
                   <td>{product.id}</td>
                   <td>un</td>
                   <td>{product.estoque_atual || 0}</td>
                   <td>
-                    <button className={`${styles.btn} ${styles.btnLight}`} style={{padding:'4px 8px', fontSize:'12px'}}>Editar</button>
+                    <button className={`${styles.btn} ${styles.btnLight}`} style={{padding:'4px 8px', fontSize:'12px'}} onClick={async () => {
+                      // open modal in edit mode, fetch full product data (including images)
+                      try {
+                        const prod = await fetchProductById(product.id);
+                        setEditProduct(prod);
+                        // map imagens to selectedImages previews (no File objects)
+                        const imgs = (prod.imagens || []).map(im => ({ file: null, preview: getImageUrl(im.url) }));
+                        setSelectedImages(imgs);
+                        setActiveModal('novo-produto');
+                      } catch (err) {
+                        console.error('Failed to fetch product for edit', err);
+                        alert('Erro ao carregar produto para edição: ' + (err.message || ''));
+                      }
+                    }}>Editar</button>
                   </td>
                 </tr>
               ))}
@@ -245,11 +461,11 @@ const StockManagement = () => {
                   <h4 style={{ color: '#0f172a', marginBottom: '10px' }}>INFORMAÇÕES BÁSICAS</h4>
                   <div className={styles.formGroup}>
                     <label>Nome *</label>
-                    <input type="text" name="nome" className={styles.formControl} placeholder="Ex.: Produto Exemplo" required />
+                    <input type="text" name="nome" className={styles.formControl} placeholder="Ex.: Produto Exemplo" required defaultValue={editProduct ? editProduct.nome : ''} />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Categoria(s) *</label>
-                    <select name="id_categoria" multiple className={styles.formControl} required style={{ height: 'auto', minHeight: '100px' }}>
+                    <select name="id_categoria" multiple className={styles.formControl} required style={{ height: 'auto', minHeight: '100px' }} defaultValue={editProduct ? [String(editProduct.id_categoria)] : undefined}>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id}>{cat.nome}</option>
                       ))}
@@ -267,11 +483,11 @@ const StockManagement = () => {
                   <div className={styles.formRow}>
                     <div className={styles.formGroup}>
                       <label>Preço de Custo (R$) *</label>
-                      <input type="number" step="0.01" name="preco_custo" className={styles.formControl} placeholder="0.00" required />
+                      <input type="number" step="0.01" name="preco_custo" className={styles.formControl} placeholder="0.00" required defaultValue={editProduct ? editProduct.preco_custo : ''} />
                     </div>
                     <div className={styles.formGroup}>
                       <label>Preço de Venda (R$) *</label>
-                      <input type="number" step="0.01" name="preco_venda" className={styles.formControl} placeholder="0.00" required />
+                      <input type="number" step="0.01" name="preco_venda" className={styles.formControl} placeholder="0.00" required defaultValue={editProduct ? editProduct.preco_venda : ''} />
                     </div>
                   </div>
                 </div>
@@ -281,21 +497,21 @@ const StockManagement = () => {
                   <div className={styles.formRow}>
                     <div className={styles.formGroup}>
                       <label>Peso (kg)</label>
-                      <input type="number" step="0.001" name="peso" className={styles.formControl} placeholder="0.000" />
+                      <input type="number" step="0.001" name="peso" className={styles.formControl} placeholder="0.000" defaultValue={editProduct && editProduct.peso !== undefined ? editProduct.peso : ''} />
                     </div>
                     <div className={styles.formGroup}>
                       <label>Altura (cm)</label>
-                      <input type="number" step="0.01" name="altura" className={styles.formControl} placeholder="0.00" />
+                      <input type="number" step="0.01" name="altura" className={styles.formControl} placeholder="0.00" defaultValue={editProduct && editProduct.altura !== undefined ? editProduct.altura : ''} />
                     </div>
                   </div>
                   <div className={styles.formRow}>
                     <div className={styles.formGroup}>
                       <label>Largura (cm)</label>
-                      <input type="number" step="0.01" name="largura" className={styles.formControl} placeholder="0.00" />
+                      <input type="number" step="0.01" name="largura" className={styles.formControl} placeholder="0.00" defaultValue={editProduct && editProduct.largura !== undefined ? editProduct.largura : ''} />
                     </div>
                     <div className={styles.formGroup}>
                       <label>Profundidade (cm)</label>
-                      <input type="number" step="0.01" name="profundidade" className={styles.formControl} placeholder="0.00" />
+                      <input type="number" step="0.01" name="profundidade" className={styles.formControl} placeholder="0.00" defaultValue={editProduct && editProduct.profundidade !== undefined ? editProduct.profundidade : ''} />
                     </div>
                   </div>
                 </div>
@@ -356,50 +572,7 @@ const StockManagement = () => {
         </div>
       )}
 
-      {/* Lançar Produtos Modal */}
-      {activeModal === 'lancar-produtos' && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={`${styles.modalSidebar} ${styles.sidebarGreenLight}`}>
-              <h3>Comece com o produto certo</h3>
-              <ul>
-                <li>Pesquise por nome ou SKU para localizar rapidamente.</li>
-                <li>Reveja o estoque selecionado para confirmar o endereço.</li>
-                <li>Defina a quantidade exata para evitar ajustes posteriores.</li>
-              </ul>
-            </div>
-            <div className={styles.modalBody}>
-              <button className={styles.closeButton} onClick={closeModal}>&times;</button>
-              <div className={styles.modalHeader}>
-                <h2>Lançar produto no estoque</h2>
-                <p>Selecione um produto do catálogo, escolha o estoque e informe a quantidade.</p>
-              </div>
-              <form>
-                <div className={styles.formGroup}>
-                  <label>Busque por nome, SKU ou descrição do produto...</label>
-                  <input type="text" className={styles.formControl} />
-                </div>
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Estoque *</label>
-                    <select className={styles.formControl}>
-                      <option>-- Selecione um estoque --</option>
-                    </select>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Quantidade *</label>
-                    <input type="number" className={styles.formControl} placeholder="0.00" />
-                  </div>
-                </div>
-                <div className={styles.modalFooter}>
-                   <button type="button" className={`${styles.btn} ${styles.btnLight}`} onClick={closeModal}>Cancelar</button>
-                   <button type="button" className={`${styles.btn} ${styles.btnGreenDark}`}>Lançar no estoque</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 'Lançar Produtos' modal removed */}
 
       {/* Lançamento em Massa Modal */}
       {activeModal === 'lancamento-massa' && (
@@ -419,20 +592,62 @@ const StockManagement = () => {
                 <h2>Lançamento em massa</h2>
                 <p>Distribua diversas unidades em um único estoque de destino com rapidez.</p>
               </div>
-              <form>
+              <form onSubmit={handleMassLaunch}>
                 <div className={styles.formGroup}>
-                  <label>Estoque de destino *</label>
-                  <select className={styles.formControl}>
-                    <option>-- Selecione o estoque --</option>
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Adicionar Produtos</label>
-                  <input type="text" className={styles.formControl} placeholder="Digite para pesquisar e adicionar produtos..." />
+                    <label>Adicionar Produtos (Informe SKU e quantidade)</label>
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input type="text" value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)} onKeyDown={handleSingleKeyDown} className={styles.formControl} placeholder="Digite para filtrar a lista abaixo" />
+                        <input type="number" value={launchQuantity} onChange={(e) => setLaunchQuantity(e.target.value)} className={styles.formControl} placeholder="Quantidade" style={{ width: '140px' }} />
+                        <button type="button" className={`${styles.btn} ${styles.btnBlue}`} onClick={() => { if (singleSelectedProduct) { /* quickly launch single product */ addMassItem(singleSelectedProduct, launchQuantity); setLaunchQuantity(''); } }}>Adicionar (rápido)</button>
+                      </div>
+                      {singleSuggestions.length > 0 && (
+                        <div style={{ position: 'absolute', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', zIndex: 50, maxHeight: '220px', overflowY: 'auto' }}>
+                          {singleSuggestions.map((s, idx) => (
+                            <div key={s.id} style={{ padding: '8px 12px', cursor: 'pointer', background: idx === singleActiveIndex ? '#f1f5f9' : 'white' }} onClick={() => selectSingleSuggestion(s)}>
+                              {s.nome} <small style={{ color: '#64748b', marginLeft: 8 }}>#{s.id}</small>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                  {massItems.length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <table className={styles.table} style={{ margin: 0 }}>
+                        <thead>
+                          <tr><th>SKU</th><th>Quantidade</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                          {massItems.map((it, idx) => (
+                            <tr key={idx} className={styles.tableBodyRow}>
+                              <td>{it.id_produto} <div style={{ color: '#64748b' }}>{it.nome}</div></td>
+                              <td>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={it.quantidade}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setMassItems(prev => prev.map((item, i) => i === idx ? { ...item, quantidade: v === '' ? '' : Number(v) } : item));
+                                  }}
+                                  className={styles.formControl}
+                                  style={{ width: '140px' }}
+                                />
+                              </td>
+                              <td>
+                                <button type="button" className={`${styles.btn} ${styles.btnLight}`} onClick={() => setMassItems(prev => prev.filter((_, i) => i !== idx))}>Remover</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
                 <div className={styles.modalFooter}>
                    <button type="button" className={`${styles.btn} ${styles.btnLight}`} onClick={closeModal}>Cancelar</button>
-                   <button type="button" className={`${styles.btn} ${styles.btnOrange}`}>Lançar em massa</button>
+                   <button type="submit" className={`${styles.btn} ${styles.btnOrange}`}>Lançar em massa</button>
                 </div>
               </form>
             </div>

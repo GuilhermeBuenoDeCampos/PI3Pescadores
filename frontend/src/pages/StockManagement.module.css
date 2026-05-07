@@ -1,6 +1,7 @@
 .container {
   padding: 30px;
-  background-color: #f8fafc;
+  /* match the app main background (globals.css/body) */
+  background: linear-gradient(180deg, #fbf5ed 0%, #f3e8dc 100%);
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1e293b;

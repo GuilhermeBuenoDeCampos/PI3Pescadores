@@ -14,6 +14,13 @@ function toNumberOrNull(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function formatDecimal(value, scale) {
+  const n = toNumberOrNull(value);
+  if (n === null) return null;
+  // Use toFixed to produce a string with the desired scale and avoid floating artifacts
+  return n.toFixed(scale);
+}
+
 function toBooleanOrDefault(value, defaultValue) {
   if (value === undefined || value === null || value === '') {
     return defaultValue;
@@ -48,12 +55,12 @@ function toProdutoPayload(produto) {
     id: plain.id,
     nome: plain.nome,
     descricao: plain.descricao,
-    preco_custo: Number(plain.preco_custo),
-    preco_venda: Number(plain.preco_venda),
-    peso: plain.peso === null ? null : Number(plain.peso),
-    altura: plain.altura === null ? null : Number(plain.altura),
-    largura: plain.largura === null ? null : Number(plain.largura),
-    profundidade: plain.profundidade === null ? null : Number(plain.profundidade),
+    preco_custo: plain.preco_custo === null || plain.preco_custo === undefined ? null : String(Number(plain.preco_custo).toFixed(2)),
+    preco_venda: plain.preco_venda === null || plain.preco_venda === undefined ? null : String(Number(plain.preco_venda).toFixed(2)),
+    peso: plain.peso === null || plain.peso === undefined ? null : String(Number(plain.peso).toFixed(3)),
+    altura: plain.altura === null || plain.altura === undefined ? null : String(Number(plain.altura).toFixed(3)),
+    largura: plain.largura === null || plain.largura === undefined ? null : String(Number(plain.largura).toFixed(3)),
+    profundidade: plain.profundidade === null || plain.profundidade === undefined ? null : String(Number(plain.profundidade).toFixed(3)),
     id_categoria: plain.id_categoria,
     ativo: plain.ativo,
     categoria: plain.categoria
@@ -173,12 +180,12 @@ exports.buscarProdutoPorId = async (id) => {
 exports.criarProduto = async (payload) => {
   const nome = String(payload.nome || '').trim();
   const descricao = payload.descricao ? String(payload.descricao).trim() : null;
-  const precoCusto = toNumberOrNull(payload.preco_custo);
-  const precoVenda = toNumberOrNull(payload.preco_venda);
-  const peso = toNumberOrNull(payload.peso);
-  const altura = toNumberOrNull(payload.altura);
-  const largura = toNumberOrNull(payload.largura);
-  const profundidade = toNumberOrNull(payload.profundidade);
+  const precoCusto = formatDecimal(payload.preco_custo, 2);
+  const precoVenda = formatDecimal(payload.preco_venda, 2);
+  const peso = formatDecimal(payload.peso, 3);
+  const altura = formatDecimal(payload.altura, 3);
+  const largura = formatDecimal(payload.largura, 3);
+  const profundidade = formatDecimal(payload.profundidade, 3);
   
   // se for array de categorias (ex: multi-select no front), pega a primeira
   let idCategoria = payload.id_categoria;
@@ -286,6 +293,74 @@ exports.adicionarImagem = async (idProduto, payload) => {
   };
 };
 
+exports.atualizarProduto = async (idProduto, payload) => {
+  const produtoModel = await db.Produto.findByPk(idProduto);
+
+  if (!produtoModel) {
+    throw new AppError(404, 'Produto not found');
+  }
+
+  const nome = payload.nome !== undefined ? String(payload.nome || '').trim() : produtoModel.nome;
+  const descricao = payload.descricao !== undefined ? (payload.descricao ? String(payload.descricao).trim() : null) : produtoModel.descricao;
+  const precoCusto = payload.preco_custo !== undefined ? formatDecimal(payload.preco_custo, 2) : produtoModel.preco_custo;
+  const precoVenda = payload.preco_venda !== undefined ? formatDecimal(payload.preco_venda, 2) : produtoModel.preco_venda;
+  const peso = payload.peso !== undefined ? formatDecimal(payload.peso, 3) : produtoModel.peso;
+  const altura = payload.altura !== undefined ? formatDecimal(payload.altura, 3) : produtoModel.altura;
+  const largura = payload.largura !== undefined ? formatDecimal(payload.largura, 3) : produtoModel.largura;
+  const profundidade = payload.profundidade !== undefined ? formatDecimal(payload.profundidade, 3) : produtoModel.profundidade;
+
+  let idCategoria = payload.id_categoria !== undefined ? payload.id_categoria : produtoModel.id_categoria;
+  if (Array.isArray(idCategoria)) {
+    idCategoria = parseInt(idCategoria[0], 10);
+  } else if (typeof idCategoria === 'string' && idCategoria.includes(',')) {
+    idCategoria = parseInt(idCategoria.split(',')[0], 10);
+  } else {
+    idCategoria = Number(idCategoria);
+  }
+
+  const ativo = payload.ativo !== undefined ? toBooleanOrDefault(payload.ativo, produtoModel.ativo) : produtoModel.ativo;
+  const imagens = Array.isArray(payload.imagens) ? payload.imagens : (payload.imagens ? [payload.imagens] : []);
+
+  if (!nome) {
+    throw new AppError(400, 'nome is required');
+  }
+
+  if (!Number.isInteger(idCategoria) || idCategoria <= 0) {
+    throw new AppError(400, 'id_categoria must be a valid integer');
+  }
+
+  const categoria = await db.Categoria.findByPk(idCategoria);
+  if (!categoria) throw new AppError(404, 'Categoria not found');
+
+  const now = new Date();
+
+  const updated = await db.sequelize.transaction(async (transaction) => {
+    await produtoModel.update({
+      nome,
+      descricao,
+      preco_custo: precoCusto,
+      preco_venda: precoVenda,
+      peso,
+      altura,
+      largura,
+      profundidade,
+      id_categoria: idCategoria,
+      ativo,
+      atualizado_em: now,
+    }, { transaction });
+
+    if (imagens && imagens.length > 0) {
+      // replace existing images with new ones
+      await db.ProdutoImagem.destroy({ where: { id_produto: produtoModel.id }, transaction });
+      await db.ProdutoImagem.bulkCreate(imagens.map(url => ({ id_produto: produtoModel.id, url, criado_em: now })), { transaction });
+    }
+
+    return produtoModel;
+  });
+
+  return exports.buscarProdutoPorId(updated.id);
+};
+
 exports.registrarMovimentacao = async (idProduto, payload) => {
   const tipo = String(payload.tipo || '').trim().toLowerCase();
   const motivo = String(payload.motivo || '').trim().toLowerCase();
@@ -327,4 +402,82 @@ exports.registrarMovimentacao = async (idProduto, payload) => {
     created_at: movimentacao.created_at,
     estoque_atual: tipo === 'entrada' ? estoqueAtual + quantidade : estoqueAtual - quantidade,
   };
+};
+
+exports.registrarMovimentacoesEmMassa = async (payload) => {
+  // Normalize payload: accept either { movimentacoes: [...] } or an array directly
+  const received = payload;
+  // helpful debug log when unexpected payloads arrive
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      console.warn('registrarMovimentacoesEmMassa received payload:', JSON.stringify(received));
+    } catch (e) {
+      console.warn('registrarMovimentacoesEmMassa received payload (non-serializable)');
+    }
+  }
+
+  const movimentacoesInput = Array.isArray(received)
+    ? received
+    : (received && Array.isArray(received.movimentacoes) ? received.movimentacoes : null);
+
+  if (!movimentacoesInput || !Array.isArray(movimentacoesInput) || movimentacoesInput.length === 0) {
+    throw new AppError(400, 'movimentacoes is required and should be a non-empty array');
+  }
+
+  const movimentacoes = movimentacoesInput.map((m) => ({
+    id_produto: Number(m.id_produto),
+    tipo: String(m.tipo || '').trim().toLowerCase(),
+    quantidade: Number(m.quantidade),
+    motivo: String(m.motivo || '').trim().toLowerCase(),
+    created_at: m.created_at ? new Date(m.created_at) : new Date(),
+  }));
+
+  // Basic validation
+  for (const m of movimentacoes) {
+    if (!Number.isInteger(m.id_produto) || m.id_produto <= 0) {
+      throw new AppError(400, 'each movimentacao must have a valid id_produto');
+    }
+    if (!ALLOWED_MOVEMENT_TYPES.has(m.tipo)) {
+      throw new AppError(400, 'tipo must be "entrada" or "saida"');
+    }
+    if (!ALLOWED_MOVEMENT_REASONS.has(m.motivo)) {
+      throw new AppError(400, 'motivo must be "compra", "venda" or "ajuste"');
+    }
+    if (!Number.isInteger(m.quantidade) || m.quantidade <= 0) {
+      throw new AppError(400, 'quantidade must be a positive integer');
+    }
+  }
+
+  // Run in transaction and ensure products exist and do not allow negative stock on 'saida'
+  const results = [];
+
+  await db.sequelize.transaction(async (transaction) => {
+    for (const m of movimentacoes) {
+      const produto = await db.Produto.findByPk(m.id_produto, { transaction });
+      if (!produto) {
+        throw new AppError(404, `Produto not found: ${m.id_produto}`);
+      }
+
+      const estoqueAtual = await calcularEstoqueProduto(produto.id, transaction);
+
+      if (m.tipo === 'saida' && m.quantidade > estoqueAtual) {
+        throw new AppError(400, `insufficient stock for product ${m.id_produto}`);
+      }
+
+      const created = await db.EstoqueMovimentacao.create(
+        {
+          id_produto: m.id_produto,
+          tipo: m.tipo,
+          quantidade: m.quantidade,
+          motivo: m.motivo,
+          created_at: m.created_at,
+        },
+        { transaction }
+      );
+
+      results.push({ id: created.id, id_produto: created.id_produto, tipo: created.tipo, quantidade: created.quantidade, motivo: created.motivo, created_at: created.created_at });
+    }
+  });
+
+  return { inserted: results.length, items: results };
 };

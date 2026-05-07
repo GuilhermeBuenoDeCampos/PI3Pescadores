@@ -46,6 +46,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// simple request logger in dev to help debug route issues
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.warn(`[dev] ${req.method} ${req.originalUrl}`);
+    return next();
+  });
+}
+
 app.use('/api', routes);
 
 app.use(notFound);
