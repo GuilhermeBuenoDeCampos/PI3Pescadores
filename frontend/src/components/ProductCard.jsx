@@ -18,7 +18,10 @@ function ProductCard({ product }) {
       <div className={styles.info}>
         <span className={styles.category}>{product.categoria?.nome?.toUpperCase()}</span>
         <h3 className={styles.name}>{product.nome}</h3>
-        <p className={styles.price}>R$ {product.preco_venda?.toFixed(2)}</p>
+        <p className={styles.price}>R$ {(() => {
+          const v = product.preco_venda === undefined || product.preco_venda === null ? null : Number(product.preco_venda);
+          return (Number.isFinite(v) ? v.toFixed(2) : '0.00');
+        })()}</p>
       </div>
     </Link>
   );
