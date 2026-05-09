@@ -10,7 +10,7 @@ module.exports = {
     database: process.env.DB_NAME || 'pescadores_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: process.env.DB_PORT || 3306,
-    dialect: 'mysql',
+    dialect: 'postgres',
     define: {
       underscored: true,
       freezeTableName: true,
@@ -23,7 +23,7 @@ module.exports = {
     database: process.env.DB_NAME_TEST || 'pescadores_db_test',
     host: process.env.DB_HOST || '127.0.0.1',
     port: process.env.DB_PORT || 3306,
-    dialect: 'mysql',
+    dialect: 'postgres',
     define: {
       underscored: true,
       freezeTableName: true,
@@ -32,7 +32,7 @@ module.exports = {
   },
   production: {
     use_env_variable: 'DATABASE_URL',
-    dialect: 'mysql',
+    dialect: 'postgres',
     define: {
       underscored: true,
       freezeTableName: true,

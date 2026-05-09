@@ -125,7 +125,7 @@ function ProductPage() {
           <div className={styles.detailsColumn}>
             <span className={styles.productCategory}>{product.categoria?.nome}</span>
             <h1>{product.nome}</h1>
-            <p className={styles.productPrice}>R$ {product.preco_venda?.toFixed(2)}</p>
+            <p className={styles.productPrice}>R$ {Number(product.preco_venda).toFixed(2)}</p>
             <p className={styles.productDescription}>{product.descricao}</p>
             <ProductDetailsCard product={product} />
           </div>
