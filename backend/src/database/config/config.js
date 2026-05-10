@@ -9,7 +9,7 @@ module.exports = {
     password: process.env.DB_PASSWORD || null,
     database: process.env.DB_NAME || 'pescadores_db',
     host: process.env.DB_HOST || '127.0.0.1',
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     define: {
       underscored: true,
@@ -22,7 +22,7 @@ module.exports = {
     password: process.env.DB_PASSWORD || null,
     database: process.env.DB_NAME_TEST || 'pescadores_db_test',
     host: process.env.DB_HOST || '127.0.0.1',
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
     define: {
       underscored: true,

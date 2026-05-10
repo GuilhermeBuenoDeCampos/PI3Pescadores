@@ -343,8 +343,7 @@ const StockManagement = () => {
 
         {/* Main Content */}
         <div className={styles.content}>
-          <h2>Painel do Fornecedor</h2>
-          <p className={styles.subtitle}>Gerencie seu catálogo de produtos e estoques de forma eficiente</p>
+
 
           {/* Actions Bar */}
           <div className={styles.actionsBar}>
