@@ -80,25 +80,30 @@ exports.registrarMovimentacao = asyncHandler(async (req, res) => {
   });
 });
 
+function parseMovimentacoesPayload(payload) {
+  let parsed = payload;
+
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch (e) {
+      // leave as-is; service will validate
+    }
+  }
+
+  if (parsed && typeof parsed.movimentacoes === 'string') {
+    try {
+      parsed.movimentacoes = JSON.parse(parsed.movimentacoes);
+    } catch (e) {
+      // leave as-is; service will validate
+    }
+  }
+
+  return parsed;
+}
+
 exports.registrarMovimentacoesEmMassa = asyncHandler(async (req, res) => {
-  let payload = req.body;
-
-  // Defensive parsing: sometimes clients send movimentacoes as a JSON string or send the array directly
-  if (typeof payload === 'string') {
-    try {
-      payload = JSON.parse(payload);
-    } catch (e) {
-      // leave as-is; service will validate and report
-    }
-  }
-
-  if (payload && typeof payload.movimentacoes === 'string') {
-    try {
-      payload.movimentacoes = JSON.parse(payload.movimentacoes);
-    } catch (e) {
-      // leave as-is; service will validate and report
-    }
-  }
+  const payload = parseMovimentacoesPayload(req.body);
 
   if (process.env.NODE_ENV !== 'production') {
     try {
