@@ -4,13 +4,16 @@
 
 .sectionTitle h2 {
   margin: 0;
-  font-size: 2rem;
-  color: #2f2a21;
-  font-family: 'Georgia', serif;
+  color: var(--text-dark);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .sectionTitle p {
   margin: 0.65rem 0 0;
-  color: #705f4a;
-  max-width: 700px;
+  color: var(--text-mid);
+  max-width: 720px;
+  font-weight: 300;
 }

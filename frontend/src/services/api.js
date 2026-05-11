@@ -1,12 +1,49 @@
-export const BACKEND_URL = 'http://localhost:3000';
+/**
+ * API Configuration & Utilities
+ * 
+ * Gerencia todas as chamadas HTTP para o backend
+ * Centraliza a URL base para facilitar mudanças entre dev/produção
+ * 
+ * IMPORTANTE: Para produção, configurar VITE_BACKEND_URL no .env
+ * Exemplo .env:
+ * - DEV: VITE_BACKEND_URL=http://localhost:3000
+ * - PROD: VITE_BACKEND_URL=https://api.seudominio.com
+ */
+
+// URL base do backend - Configurável via variáveis de ambiente
+export const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+
 const API_URL = `${BACKEND_URL}/api`;
 
+/**
+ * Constrói URL completa para imagens
+ * Lida com três casos:
+ * 1. URL vazia/null → retorna vazio
+ * 2. URL completa (http/https) → retorna como está
+ * 3. Caminho relativo → prepende BACKEND_URL
+ * 
+ * Exemplo:
+ * getImageUrl('/uploads/Banner/imagem.jpg') 
+ * → 'http://localhost:3000/uploads/Banner/imagem.jpg'
+ * 
+ * @param {string} url - URL ou caminho da imagem
+ * @returns {string} URL completa da imagem
+ */
 export function getImageUrl(url) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   return `${BACKEND_URL}${url}`;
 }
 
+
+/**
+ * Busca produtos com filtros opcionais
+ * 
+ * @param {Object} filters - Filtros (category, active, etc)
+ * @returns {Promise<Array>} Lista de produtos
+ * @throws {Error} Se falhar requisição
+ */
 export async function fetchProducts(filters = {}) {
   const params = new URLSearchParams();
   
@@ -31,6 +68,14 @@ export async function fetchProducts(filters = {}) {
   return result.data || [];
 }
 
+
+/**
+ * Busca um produto específico por ID
+ * 
+ * @param {string|number} id - ID do produto
+ * @returns {Promise<Object>} Dados do produto
+ * @throws {Error} Se falhar requisição
+ */
 export async function fetchProductById(id) {
   const response = await fetch(`${API_URL}/produtos/${id}`);
   
@@ -42,6 +87,13 @@ export async function fetchProductById(id) {
   return result.data;
 }
 
+
+/**
+ * Busca todas as categorias de produtos
+ * 
+ * @returns {Promise<Array>} Lista de categorias
+ * @throws {Error} Se falhar requisição
+ */
 export async function fetchCategories() {
   const response = await fetch(`${API_URL}/categorias`);
   
