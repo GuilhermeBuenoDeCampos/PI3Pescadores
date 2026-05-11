@@ -33,7 +33,9 @@ const API_URL = `${BACKEND_URL}/api`;
 export function getImageUrl(url) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${BACKEND_URL}${url}`;
+  // ensure we don't accidentally join without a slash: handle 'uploads/img.jpg' and '/uploads/img.jpg'
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  return `${BACKEND_URL}${normalized}`;
 }
 
 
