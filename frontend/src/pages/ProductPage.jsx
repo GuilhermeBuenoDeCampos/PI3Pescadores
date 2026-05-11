@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProductById, fetchProducts, getImageUrl } from '../services/api';
+
 import Header from '../components/Header';
 import ProductDetailsCard from '../components/ProductDetailsCard';
 import RelatedProducts from '../components/RelatedProducts';
 import Footer from '../components/Footer';
 import styles from './ProductPage.module.css';
 import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
+import { useCart } from '../context/CartContext';
 
 function ProductPage() {
+  const { addToCart } = useCart ? useCart() : { addToCart: () => {} };
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -127,6 +130,9 @@ function ProductPage() {
             <h1>{product.nome}</h1>
             <p className={styles.productPrice}>R$ {product.preco_venda?.toFixed(2)}</p>
             <p className={styles.productDescription}>{product.descricao}</p>
+            <button className={styles.addToCartBtn} onClick={() => addToCart(product)}>
+              Adicionar ao carrinho
+            </button>
             <ProductDetailsCard product={product} />
           </div>
         </section>

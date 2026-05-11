@@ -1,7 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
+
 import Home from './pages/Home';
 import ProductPage from './pages/ProductPage';
 import StockManagement from './pages/StockManagement';
+import CartPage from './pages/CartPage';
 import styles from './App.module.css';
 
 // App component defines the two main application pages.
@@ -12,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/produto/:id" element={<ProductPage />} />
         <Route path="/estoque" element={<StockManagement />} />
+        <Route path="/carrinho" element={<CartPage />} />
       </Routes>
     </div>
   );
