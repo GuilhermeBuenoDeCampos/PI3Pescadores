@@ -35,6 +35,22 @@ exports.detalhar = asyncHandler(async (req, res) => {
   });
 });
 
+exports.detalharPorNome = asyncHandler(async (req, res) => {
+  const nome = req.params.nome;
+
+  if (!nome || typeof nome !== 'string' || nome.trim().length === 0) {
+    return res.status(400).json({
+      error: { message: 'Invalid product name' },
+    });
+  }
+
+  const produto = await produtoService.buscarProdutoPorNome(nome);
+
+  res.json({
+    data: produto,
+  });
+});
+
 const fs = require('fs');
 const path = require('path');
 const supabase = require('../utils/supabaseClient');

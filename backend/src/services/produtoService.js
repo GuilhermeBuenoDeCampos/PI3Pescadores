@@ -4,6 +4,17 @@ const AppError = require('../middlewares/appError');
 const ALLOWED_MOVEMENT_TYPES = new Set(['entrada', 'saida']);
 const ALLOWED_MOVEMENT_REASONS = new Set(['compra', 'venda', 'ajuste']);
 
+// Utility function to generate slug from product name for URL-friendly routing
+function generateSlug(nome) {
+  return String(nome || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^\w\s-]/g, '') // Remove special chars
+    .replace(/[\s_-]+/g, '-') // Replace spaces/underscores/hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
 function toNumberOrNull(value) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -66,6 +77,7 @@ function toProdutoPayload(produto) {
   return {
     id: plain.id,
     nome: plain.nome,
+    slug: generateSlug(plain.nome),
     descricao: plain.descricao,
     preco_custo: formatarCampoNumerico(plain.preco_custo, 2),
     preco_venda: formatarCampoNumerico(plain.preco_venda, 2),
@@ -205,6 +217,45 @@ exports.listarProdutos = async (query) => {
 
 exports.buscarProdutoPorId = async (id) => {
   const produto = await buscarProdutoModelPorId(id);
+  return toProdutoPayload(produto);
+};
+
+exports.buscarProdutoPorNome = async (nome) => {
+  // Create slug from the provided name to match against product names
+  const slug = generateSlug(nome);
+  
+  if (!slug) {
+    throw new AppError(400, 'Invalid product name');
+  }
+
+  // Fetch all products and find the one matching the slug
+  // (could be optimized with a database search if product names are indexed)
+  const produtos = await db.Produto.findAll({
+    include: [
+      {
+        model: db.Categoria,
+        as: 'categoria',
+        attributes: ['id', 'nome'],
+      },
+      {
+        model: db.ProdutoImagem,
+        as: 'imagens',
+        attributes: ['id', 'url', 'criado_em'],
+      },
+      {
+        model: db.EstoqueMovimentacao,
+        as: 'movimentacoesEstoque',
+        attributes: ['id', 'tipo', 'quantidade', 'motivo', 'created_at'],
+      },
+    ],
+  });
+
+  const produto = produtos.find(p => generateSlug(p.nome) === slug);
+
+  if (!produto) {
+    throw new AppError(404, 'Produto not found');
+  }
+
   return toProdutoPayload(produto);
 };
 

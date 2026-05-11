@@ -11,9 +11,20 @@ import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../utils/productUtils';
 
+// Utility function to generate slug (matches backend implementation)
+function generateSlug(nome) {
+  return String(nome || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^\w\s-]/g, '') // Remove special chars
+    .replace(/[\s_-]+/g, '-') // Replace spaces/underscores/hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
 function ProductPage() {
   const { addToCart } = useCart ? useCart() : { addToCart: () => {} };
-  const { id } = useParams();
+  const { id, nome } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
@@ -25,7 +36,19 @@ function ProductPage() {
     const loadProduct = async () => {
       try {
         setLoading(true);
-        const productData = await fetchProductById(id);
+        let productData;
+
+        if (nome) {
+          // Load by product name (slug)
+          const response = await fetch(`http://localhost:3000/api/produtos/nome/${encodeURIComponent(nome)}`);
+          if (!response.ok) throw new Error('Produto não encontrado');
+          const result = await response.json();
+          productData = result.data;
+        } else {
+          // Load by product ID
+          productData = await fetchProductById(id);
+        }
+
         setProduct(productData);
         setActiveImage(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
         setMainImgSrc(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
@@ -38,7 +61,7 @@ function ProductPage() {
     };
 
     loadProduct();
-  }, [id]);
+  }, [id, nome]);
 
   useEffect(() => {
     const loadAllProducts = async () => {
