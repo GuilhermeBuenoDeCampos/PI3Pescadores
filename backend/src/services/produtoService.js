@@ -37,30 +37,42 @@ function toBooleanOrDefault(value, defaultValue) {
   return Boolean(value);
 }
 
-function toProdutoPayload(produto) {
-  const plain = produto.toJSON ? produto.toJSON() : produto;
-  const imagens = Array.isArray(plain.imagens)
-    ? [...plain.imagens].sort((a, b) => Number(a.id) - Number(b.id))
-    : [];
-  const movimentacoes = Array.isArray(plain.movimentacoesEstoque)
-    ? [...plain.movimentacoesEstoque].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-    : [];
+function sortImagens(imagens) {
+  return Array.isArray(imagens) ? [...imagens].sort((a, b) => Number(a.id) - Number(b.id)) : [];
+}
 
-  const estoqueAtual = movimentacoes.reduce((total, movimentacao) => {
+function sortMovimentacoes(movimentacoes) {
+  return Array.isArray(movimentacoes) ? [...movimentacoes].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)) : [];
+}
+
+function calcularEstoqueAtual(movimentacoes) {
+  return movimentacoes.reduce((total, movimentacao) => {
     const quantidade = Number(movimentacao.quantidade) || 0;
     return movimentacao.tipo === 'entrada' ? total + quantidade : total - quantidade;
   }, 0);
+}
+
+function formatarCampoNumerico(campo, scale) {
+  if (campo === null || campo === undefined) return null;
+  return String(Number(campo).toFixed(scale));
+}
+
+function toProdutoPayload(produto) {
+  const plain = produto.toJSON ? produto.toJSON() : produto;
+  const imagens = sortImagens(plain.imagens);
+  const movimentacoes = sortMovimentacoes(plain.movimentacoesEstoque);
+  const estoqueAtual = calcularEstoqueAtual(movimentacoes);
 
   return {
     id: plain.id,
     nome: plain.nome,
     descricao: plain.descricao,
-    preco_custo: plain.preco_custo === null || plain.preco_custo === undefined ? null : String(Number(plain.preco_custo).toFixed(2)),
-    preco_venda: plain.preco_venda === null || plain.preco_venda === undefined ? null : String(Number(plain.preco_venda).toFixed(2)),
-    peso: plain.peso === null || plain.peso === undefined ? null : String(Number(plain.peso).toFixed(3)),
-    altura: plain.altura === null || plain.altura === undefined ? null : String(Number(plain.altura).toFixed(3)),
-    largura: plain.largura === null || plain.largura === undefined ? null : String(Number(plain.largura).toFixed(3)),
-    profundidade: plain.profundidade === null || plain.profundidade === undefined ? null : String(Number(plain.profundidade).toFixed(3)),
+    preco_custo: formatarCampoNumerico(plain.preco_custo, 2),
+    preco_venda: formatarCampoNumerico(plain.preco_venda, 2),
+    peso: formatarCampoNumerico(plain.peso, 3),
+    altura: formatarCampoNumerico(plain.altura, 3),
+    largura: formatarCampoNumerico(plain.largura, 3),
+    profundidade: formatarCampoNumerico(plain.profundidade, 3),
     id_categoria: plain.id_categoria,
     ativo: plain.ativo,
     categoria: plain.categoria

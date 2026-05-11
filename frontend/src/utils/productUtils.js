@@ -1,4 +1,12 @@
 /**
+ * Formata o preço para exibição.
+ */
+export function formatPrice(preco) {
+  const v = preco === undefined || preco === null ? null : Number(preco);
+  return Number.isFinite(v) ? v.toFixed(2) : '0.00';
+}
+
+/**
  * Retorna todas as categorias únicas incluidas no catálogo de produtos.
  */
 export function getProductCategories(products) {

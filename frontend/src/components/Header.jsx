@@ -1,8 +1,13 @@
+
 import { Link } from 'react-router-dom';
 import styles from './Header.module.css';
 import logo from '../assets/logo/logo.png';
+import { useCart } from '../context/CartContext';
+import { FaShoppingCart } from 'react-icons/fa';
 
 function Header() {
+  const { cart } = useCart ? useCart() : { cart: { items: [] } };
+  const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   return (
     <header className={styles.header}> 
       <div className={styles.brand}>
@@ -16,7 +21,9 @@ function Header() {
       </div>
       <nav className={styles.navLinks}>
         <Link to="/">Início</Link>
+        <a href="#categories">Categorias</a>
         <a href="#catalog">Catálogo</a>
+        <Link to="/estoque">Estoque</Link>
       </nav>
     </header>
   );

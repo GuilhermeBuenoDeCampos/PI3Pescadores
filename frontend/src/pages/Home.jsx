@@ -83,6 +83,12 @@ function Home() {
     [products, activeCategory, searchQuery, minPrice, maxPrice, sortOrder]
   );
 
+  const visibleCategories = categories.filter((category) => category !== 'Todos').slice(0, 5);
+  const totalProducts = products.length;
+
+  const getCategoryCount = (category) =>
+    products.filter((product) => product.categoria?.nome === category).length;
+
   function handleSearchSubmit(event) {
     event.preventDefault();
     setSearchQuery(searchText);
@@ -92,23 +98,107 @@ function Home() {
     <div>
       <Header />
 
-      <main className={styles.homeMain}>
+      <main>
         <section className={styles.heroSection}>
-          <div className={styles.heroText}>
-            <span className={styles.heroBadge}>Linha especial</span>
-            <h1>Artigos religiosos para fé e devoção</h1>
+          <div className={styles.heroLeft}>
+            <span className={styles.heroBadge}>Tres Pescadores Store</span>
+            <h1>
+              Artigos religiosos para <em>fé</em> e devoção
+            </h1>
             <p>
-              Produtos selecionados com cuidado, inspirados no clássico, para enriquecer o seu altar
-              e seus momentos espirituais.
+              Produtos católicos selecionados com cuidado, acabamento elegante e espírito sereno
+              para enriquecer o seu altar, sua casa e seus momentos de oração.
             </p>
+            <div className={styles.heroActions}>
+              <a href="#catalog" className={styles.primaryButton}>Explorar loja</a>
+              <a href="#categories" className={styles.secondaryButton}>Ver categorias</a>
+            </div>
           </div>
 
-          <div className={styles.heroImageWrapper}>
+          <div className={styles.heroRight}>
             <BannerCarousel />
+            <div className={styles.heroSeal}>
+              <strong>{totalProducts || '...'}</strong>
+              <span>produtos no catálogo</span>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.trustBar} aria-label="Diferenciais da loja">
+          <div className={styles.trustItem}>
+            <span>🚚</span>
+            <div>
+              <strong>Entrega combinada</strong>
+              <small>Consulte disponibilidade</small>
+            </div>
+          </div>
+          <div className={styles.trustItem}>
+            <span>🔒</span>
+            <div>
+              <strong>Compra segura</strong>
+              <small>Atendimento com cuidado</small>
+            </div>
+          </div>
+          <div className={styles.trustItem}>
+            <span>✝</span>
+            <div>
+              <strong>Artigos católicos</strong>
+              <small>Fé, devoção e tradição</small>
+            </div>
+          </div>
+          <div className={styles.trustItem}>
+            <span>💬</span>
+            <div>
+              <strong>Suporte próximo</strong>
+              <small>Ajuda para escolher</small>
+            </div>
+          </div>
+        </section>
+
+        <section id="categories" className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.sectionLabel}>Explore o catálogo</span>
+              <h2>Categorias</h2>
+            </div>
+            <a href="#catalog" className={styles.seeAll}>Ver catálogo →</a>
+          </div>
+
+          <div className={styles.categoriesGrid}>
+            {visibleCategories.length === 0 ? (
+              <p className={styles.emptyState}>Carregando categorias...</p>
+            ) : (
+              visibleCategories.map((category, index) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={styles.categoryCard}
+                  onClick={() => {
+                    setActiveCategory(category);
+                    setSearchQuery('');
+                    setSearchText('');
+                  }}
+                >
+                  <span className={`${styles.categoryIcon} ${styles[`categoryTone${index + 1}`]}`}>
+                    {['✝', '📿', '📖', '🕯', '⛪'][index] || '✦'}
+                  </span>
+                  <span className={styles.categoryName}>{category}</span>
+                  <small>{getCategoryCount(category)} produtos</small>
+                </button>
+              ))
+            )}
           </div>
         </section>
 
         <section id="catalog" className={styles.catalogSection}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.sectionLabel}>Produtos reais</span>
+              <h2>Destaques</h2>
+            </div>
+            <span className={styles.catalogCount}>{filteredProducts.length} itens encontrados</span>
+          </div>
+
           <div className={styles.controls}>
             <SearchBar
               value={searchText}
@@ -139,13 +229,13 @@ function Home() {
 
           <div className={styles.productGrid}>
             {loading ? (
-              <p style={{ gridColumn: '1 / -1', textAlign: 'center' }}>Carregando produtos...</p>
+              <p className={styles.emptyState}>Carregando produtos...</p>
             ) : error ? (
-              <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'red' }}>
+              <p className={styles.errorState}>
                 Erro ao carregar produtos: {error}
               </p>
             ) : filteredProducts.length === 0 ? (
-              <p style={{ gridColumn: '1 / -1', textAlign: 'center' }}>
+              <p className={styles.emptyState}>
                 Nenhum produto encontrado
               </p>
             ) : (
@@ -154,6 +244,62 @@ function Home() {
               ))
             )}
           </div>
+        </section>
+
+        <section className={styles.bannerSection}>
+          <div className={styles.bannerGrid}>
+            <div className={styles.bannerMain}>
+              <span>✦ Seleção especial</span>
+              <h2>
+                Itens para o altar, a oração e o presente com significado
+              </h2>
+              <a href="#catalog">Ver produtos →</a>
+            </div>
+            <div className={styles.bannerStack}>
+              <article className={styles.bannerMini}>
+                <h3>Imagens e oratórios</h3>
+                <p>Peças para compor espaços de devoção com beleza e reverência.</p>
+                <a href="#catalog">Explorar →</a>
+              </article>
+              <article className={`${styles.bannerMini} ${styles.bannerMiniWarm}`}>
+                <h3>Bíblias e terços</h3>
+                <p>Clássicos da fé católica para estudo, oração diária e presentes.</p>
+                <a href="#catalog">Conhecer →</a>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.testimonialsSection}>
+          <span className={styles.sectionLabel}>Compromissos da loja</span>
+          <h2>Atendimento com respeito à sua devoção</h2>
+          <div className={styles.testimonialsGrid}>
+            <article className={styles.testimonialCard}>
+              <strong>★★★★★</strong>
+              <p>Curadoria focada em artigos religiosos católicos para diferentes momentos de fé.</p>
+              <span>Tres Pescadores Store</span>
+            </article>
+            <article className={styles.testimonialCard}>
+              <strong>★★★★★</strong>
+              <p>Produtos apresentados com imagens, categorias e preços reais do catálogo.</p>
+              <span>Catálogo atualizado</span>
+            </article>
+            <article className={styles.testimonialCard}>
+              <strong>★★★★★</strong>
+              <p>Navegação com busca, filtros por categoria e ordenação por preço preservados.</p>
+              <span>Experiência de compra</span>
+            </article>
+          </div>
+        </section>
+
+        <section className={styles.newsletter}>
+          <span>✦ Fique por dentro</span>
+          <h2>Receba novidades da Tres Pescadores</h2>
+          <p>Cadastre seu e-mail para acompanhar novos artigos religiosos e seleções especiais.</p>
+          <form className={styles.newsletterForm} onSubmit={(event) => event.preventDefault()}>
+            <input type="email" placeholder="Seu melhor e-mail" aria-label="Seu melhor e-mail" />
+            <button type="submit">Inscrever-se</button>
+          </form>
         </section>
       </main>
 
