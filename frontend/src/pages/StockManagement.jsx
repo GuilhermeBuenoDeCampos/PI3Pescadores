@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchCategories, fetchProducts, fetchProductById, getImageUrl } from '../services/api';
+import { fetchCategories, fetchProducts, fetchProductById, getImageUrl, updateProductStatus } from '../services/api';
 import styles from './StockManagement.module.css';
 
 const StockManagement = () => {
@@ -292,6 +292,16 @@ const StockManagement = () => {
     }
   };
 
+  const handleToggleActive = async (productId, currentStatus) => {
+    try {
+      await updateProductStatus(productId, !currentStatus);
+      loadData();
+    } catch (err) {
+      console.error('Erro ao atualizar status do produto:', err);
+      alert('Erro ao atualizar status: ' + (err.message || ''));
+    }
+  };
+
   const handleMassLaunch = async (e) => {
     e.preventDefault();
     if (!massItems.length) {
@@ -391,6 +401,7 @@ const StockManagement = () => {
                 <th>SKU</th>
                 <th>Unidade</th>
                 <th>Quantidade</th>
+                <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -405,6 +416,17 @@ const StockManagement = () => {
                   <td>{product.id}</td>
                   <td>un</td>
                   <td>{product.estoque_atual || 0}</td>
+                  <td>
+                    <label className={styles.toggleSwitch}>
+                      <input 
+                        type="checkbox" 
+                        checked={product.ativo} 
+                        onChange={() => handleToggleActive(product.id, product.ativo)}
+                        className={styles.toggleCheckbox}
+                      />
+                      <span className={styles.toggleSlider}></span>
+                    </label>
+                  </td>
                   <td>
                     <button className={`${styles.btn} ${styles.btnLight}`} style={{padding:'4px 8px', fontSize:'12px'}} onClick={async () => {
                       // open modal in edit mode, fetch full product data (including images)
@@ -425,7 +447,7 @@ const StockManagement = () => {
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
                     Nenhum produto encontrado.
                   </td>
                 </tr>

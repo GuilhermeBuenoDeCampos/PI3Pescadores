@@ -106,3 +106,26 @@ export async function fetchCategories() {
   const result = await response.json();
   return result.data || [];
 }
+
+/**
+ * Atualiza o status ativo de um produto
+ * 
+ * @param {string|number} id - ID do produto
+ * @param {boolean} ativo - Novo valor para ativo
+ * @returns {Promise<Object>} Dados do produto atualizado
+ * @throws {Error} Se falhar requisição
+ */
+export async function updateProductStatus(id, ativo) {
+  const response = await fetch(`${API_URL}/produtos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ativo })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to update product status: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
