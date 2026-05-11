@@ -54,6 +54,9 @@ function Home() {
       
       let filtered = products;
       
+      // Filtro por status ativo
+      filtered = filtered.filter(p => p.ativo !== false);
+      
       // Filtro por categoria
       if (activeCategory !== 'Todos') {
         filtered = filtered.filter(p => p.categoria?.nome === activeCategory);
