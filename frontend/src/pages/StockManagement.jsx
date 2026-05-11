@@ -25,6 +25,11 @@ const StockManagement = () => {
   const [massSelectedProduct, setMassSelectedProduct] = useState(null);
   const [massQtyInput, setMassQtyInput] = useState('');
   const [massActiveIndex, setMassActiveIndex] = useState(-1);
+  // Settings
+  const [autoDisableZeroStock, setAutoDisableZeroStock] = useState(() => {
+    const saved = localStorage.getItem('autoDisableZeroStock');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const loadData = async () => {
     try {
@@ -43,6 +48,27 @@ const StockManagement = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto-desativar produtos com estoque zero
+  useEffect(() => {
+    const autoDisableProducts = async () => {
+      if (!autoDisableZeroStock || !Array.isArray(products)) return;
+
+      for (const product of products) {
+        // Se o produto tem estoque zero e está ativo, desativar
+        if (product.estoque_atual === 0 && product.ativo !== false) {
+          try {
+            await updateProductStatus(product.id, false);
+            console.log(`Produto ${product.nome} desativado automaticamente por falta de estoque`);
+          } catch (err) {
+            console.error(`Erro ao desativar produto ${product.id}:`, err);
+          }
+        }
+      }
+    };
+
+    autoDisableProducts();
+  }, [autoDisableZeroStock, products]);
 
   const closeModal = () => {
     setActiveModal(null);
@@ -302,6 +328,12 @@ const StockManagement = () => {
     }
   };
 
+  const handleToggleAutoDisableZeroStock = () => {
+    const newValue = !autoDisableZeroStock;
+    setAutoDisableZeroStock(newValue);
+    localStorage.setItem('autoDisableZeroStock', JSON.stringify(newValue));
+  };
+
   const handleMassLaunch = async (e) => {
     e.preventDefault();
     if (!massItems.length) {
@@ -362,6 +394,7 @@ const StockManagement = () => {
             <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('categorias')}>📋 Categorias</button>
             {/* botão 'Lançar Produtos' removido */}
             <button className={`${styles.btn} ${styles.btnYellow}`} onClick={() => setActiveModal('lancamento-massa')}>&equiv; Lançamento em Massa</button>
+            <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('configuracoes')}>⚙️ Configurações</button>
           </div>
 
           {/* Dashboards */}
@@ -831,6 +864,65 @@ const StockManagement = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button type="button" className={`${styles.btn} ${styles.btnLight}`} onClick={closeModal}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Configurações Modal */}
+      {activeModal === 'configuracoes' && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={`${styles.modalSidebar} ${styles.sidebarBlue}`}>
+              <h3>Configurações</h3>
+              <ul>
+                <li>Customize as preferências do seu gerenciador de estoque.</li>
+                <li>Ative automações para ganhar tempo.</li>
+                <li>Mantenha seu inventário organizado e eficiente.</li>
+              </ul>
+            </div>
+            <div className={styles.modalBody}>
+              <button className={styles.closeButton} onClick={closeModal}>&times;</button>
+              <div className={styles.modalHeader}>
+                <h2>Configurações do Sistema</h2>
+                <p>Personalize o comportamento do seu gerenciador de estoque.</p>
+              </div>
+
+              <div style={{ marginBottom: '25px' }}>
+                <h4 style={{ color: '#0f172a', marginBottom: '15px' }}>AUTOMAÇÕES</h4>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '15px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '1px solid #e1e7ec'
+                }}>
+                  <div>
+                    <label style={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
+                      Auto-desativar com Estoque Zero
+                    </label>
+                    <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
+                      Desativa automaticamente produtos quando o estoque chega a zero.
+                    </p>
+                  </div>
+                  <div className={styles.toggleSwitch} onClick={handleToggleAutoDisableZeroStock}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.toggleCheckbox}
+                      checked={autoDisableZeroStock}
+                      readOnly
+                    />
+                    <span className={styles.toggleSlider}></span>
+                  </div>
                 </div>
               </div>
 
