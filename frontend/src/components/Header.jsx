@@ -24,6 +24,12 @@ function Header() {
         <a href="#categories">Categorias</a>
         <a href="#catalog">Catálogo</a>
         <Link to="/estoque">Estoque</Link>
+        <Link to="/carrinho" className={styles.cartIcon} aria-label="Carrinho">
+          <FaShoppingCart size={22} />
+          {itemCount > 0 && (
+            <span className={styles.cartCount}>{itemCount}</span>
+          )}
+        </Link>
       </nav>
     </header>
   );
