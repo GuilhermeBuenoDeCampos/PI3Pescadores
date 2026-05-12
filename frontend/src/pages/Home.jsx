@@ -137,10 +137,6 @@ function Home() {
 
           <div className={styles.heroRight}>
             <BannerCarousel />
-            <div className={styles.heroSeal}>
-              <strong>{totalProducts || '...'}</strong>
-              <span>produtos no catálogo</span>
-            </div>
           </div>
         </section>
 
@@ -175,48 +171,11 @@ function Home() {
           </div>
         </section>
 
-        <section id="categories" className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.sectionLabel}>Explore o catálogo</span>
-              <h2>Categorias</h2>
-            </div>
-            <a href="#catalog" className={styles.seeAll}>Ver catálogo →</a>
-          </div>
-
-          <div className={styles.categoriesGrid}>
-            {visibleCategories.length === 0 ? (
-              <p className={styles.emptyState}>Carregando categorias...</p>
-            ) : (
-              visibleCategories.map((category, index) => (
-                <button
-                  key={category}
-                  type="button"
-                  className={styles.categoryCard}
-                  onClick={() => {
-                    setActiveCategory(category);
-                    setSearchQuery('');
-                    setSearchText('');
-                  }}
-                >
-                  <span className={`${styles.categoryIcon} ${styles[`categoryTone${index + 1}`]}`}>
-                    {['✝', '📿', '📖', '🕯', '⛪'][index] || '✦'}
-                  </span>
-                  <span className={styles.categoryName}>{category}</span>
-                  <small>{getCategoryCount(category)} produtos</small>
-                </button>
-              ))
-            )}
-          </div>
-        </section>
+        
 
         <section id="catalog" className={styles.catalogSection}>
           <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.sectionLabel}>Produtos reais</span>
-              <h2>Destaques</h2>
-            </div>
-            <span className={styles.catalogCount}>{filteredProducts.length} itens encontrados</span>
+            <span className={`${styles.catalogCount} ${styles.alignRight}`}>{filteredProducts.length} itens encontrados</span>
           </div>
 
           <div className={styles.controls}>
@@ -312,15 +271,7 @@ function Home() {
           </div>
         </section>
 
-        <section className={styles.newsletter}>
-          <span>✦ Fique por dentro</span>
-          <h2>Receba novidades da Tres Pescadores</h2>
-          <p>Cadastre seu e-mail para acompanhar novos artigos religiosos e seleções especiais.</p>
-          <form className={styles.newsletterForm} onSubmit={(event) => event.preventDefault()}>
-            <input type="email" placeholder="Seu melhor e-mail" aria-label="Seu melhor e-mail" />
-            <button type="submit">Inscrever-se</button>
-          </form>
-        </section>
+        
       </main>
 
       <Footer />

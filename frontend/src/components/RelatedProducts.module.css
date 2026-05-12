@@ -12,7 +12,7 @@
 }
 
 .label {
-  color: #825f38;
+  color: var(--primary-color);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.85rem;

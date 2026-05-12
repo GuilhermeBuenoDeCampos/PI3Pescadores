@@ -1,19 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import './cart.css';
-
-// Dados simulados para demonstração (versão simplificada usada na réplica)
-const DEMO_ITEMS = [
-  {
-    id: 1,
-    nome: 'Terço de Madeira Clássico - Marrom',
-    descricao_curta: '',
-    preco_venda: 89.90,
-    imagens: [{ url: 'https://via.placeholder.com/120' }],
-  }
-];
 
 const RECOMMENDED = [
   { id: 101, nome: 'Terço de Cristal Premium', preco_venda: 65.00, categoria: { nome: 'Terços' } },
@@ -26,9 +16,8 @@ function CartPage() {
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
 
-  // Usar itens do cart, ou demonstração se vazio
-  const displayItems = cart.items.length > 0 ? cart.items : 
-    DEMO_ITEMS.map(item => ({ product: item, quantity: Math.floor(Math.random() * 3) + 1 }));
+  // Usar itens do cart
+  const displayItems = Array.isArray(cart.items) ? cart.items : [];
 
   const handleIncrease = (product) => {
     addToCart(product);
@@ -38,16 +27,17 @@ function CartPage() {
     decreaseQuantity(productId);
   };
 
-  const subtotal = displayItems.reduce(
-    (total, item) => total + (item.product.preco_venda * item.quantity),
-    0
-  );
+  const subtotal = displayItems.reduce((total, item) => {
+    const price = Number(item.product.preco_venda ?? item.product.preco ?? 0) || 0;
+    return total + price * item.quantity;
+  }, 0);
 
   const shipping = subtotal > 0 ? 0 : 0; // Frete grátis
   const taxes = subtotal * 0.05; // 5% de imposto simulado
   const total = subtotal + shipping + taxes - couponDiscount;
   
   const totalItems = displayItems.reduce((total, item) => total + item.quantity, 0);
+  const formatMoney = (value) => Number(value ?? 0).toFixed(2);
 
   const applyCoupon = () => {
     if (couponCode.toLowerCase() === 'desc10') {
@@ -69,6 +59,13 @@ function CartPage() {
               <h2>Seu Carrinho</h2>
             </div>
 
+            {displayItems.length === 0 && (
+              <div className="cart-empty">
+                <p>Seu carrinho está vazio.</p>
+                <Link to="/">Voltar ao catálogo</Link>
+              </div>
+            )}
+
             {displayItems.map(({ product, quantity }) => (
               <div className="cart-item" key={product.id}>
                 <div className="item-img-box">
@@ -80,7 +77,7 @@ function CartPage() {
                 </div>
                 <div className="item-info">
                   <div>
-                    <a href={`/produto/${product.id}`} className="item-title">{product.nome}</a>
+                    <Link to={`/produto/${product.id}`} className="item-title">{product.nome}</Link>
                   </div>
                   <div className="item-actions">
                     <button type="button" onClick={() => removeFromCart(product.id)}>Excluir</button>
@@ -94,7 +91,7 @@ function CartPage() {
                 </div>
 
                 <div className="item-price-box">
-                  <span className="current-price">R$ {product.preco_venda.toFixed(2)}</span>
+                  <span className="current-price">R$ {formatMoney(product.preco_venda ?? product.preco)}</span>
                 </div>
               </div>
             ))}
