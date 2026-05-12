@@ -312,15 +312,7 @@ function Home() {
           </div>
         </section>
 
-        <section className={styles.newsletter}>
-          <span>✦ Fique por dentro</span>
-          <h2>Receba novidades da Tres Pescadores</h2>
-          <p>Cadastre seu e-mail para acompanhar novos artigos religiosos e seleções especiais.</p>
-          <form className={styles.newsletterForm} onSubmit={(event) => event.preventDefault()}>
-            <input type="email" placeholder="Seu melhor e-mail" aria-label="Seu melhor e-mail" />
-            <button type="submit">Inscrever-se</button>
-          </form>
-        </section>
+        
       </main>
 
       <Footer />
