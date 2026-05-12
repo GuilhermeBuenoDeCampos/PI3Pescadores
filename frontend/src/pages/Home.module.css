@@ -237,6 +237,10 @@
   white-space: nowrap;
 }
 
+.alignRight {
+  margin-left: auto;
+}
+
 .seeAll {
   border-bottom: 1px solid var(--indigo-light);
   padding-bottom: 2px;

@@ -179,7 +179,7 @@ function Home() {
 
         <section id="catalog" className={styles.catalogSection}>
           <div className={styles.sectionHeader}>
-            <span className={styles.catalogCount}>{filteredProducts.length} itens encontrados</span>
+            <span className={`${styles.catalogCount} ${styles.alignRight}`}>{filteredProducts.length} itens encontrados</span>
           </div>
 
           <div className={styles.controls}>
