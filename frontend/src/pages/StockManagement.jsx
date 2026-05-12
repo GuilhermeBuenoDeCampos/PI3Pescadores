@@ -8,10 +8,12 @@ import {
   updateProductStatus,
 } from '../services/api';
 import logo from '../assets/logo/logo.png';
+import AuditoriaModal from '../components/AuditoriaModal';
 import styles from './StockManagement.module.css';
 
 const StockManagement = () => {
   const [activeModal, setActiveModal] = useState(null);
+  const [isAuditoriaOpen, setIsAuditoriaOpen] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -336,6 +338,7 @@ const StockManagement = () => {
             <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('categorias')}>📋 Categorias</button>
             {/* botão 'Lançar Produtos' removido */}
             <button className={`${styles.btn} ${styles.btnYellow}`} onClick={() => setActiveModal('lancamento-massa')}>&equiv; Lançar Produto</button>
+            <button className={`${styles.btn} ${styles.btnGreen}`} onClick={() => setIsAuditoriaOpen(true)}>✓ Auditoria</button>
             <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('configuracoes')}>⚙️ Configurações</button>
           </div>
 
@@ -875,6 +878,12 @@ const StockManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Auditoria Modal */}
+      <AuditoriaModal 
+        isOpen={isAuditoriaOpen} 
+        onClose={() => setIsAuditoriaOpen(false)}
+      />
 
       </div>
     </div>

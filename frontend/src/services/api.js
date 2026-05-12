@@ -116,6 +116,64 @@ export async function fetchProductByName(nome) {
   return result.data;
 }
 
+/**
+ * Busca 5 produtos aleatórios para auditoria
+ * 
+ * @returns {Promise<Array>} Lista de 5 produtos aleatórios
+ * @throws {Error} Se falhar requisição
+ */
+export async function fetchProdutosAleatorios() {
+  const response = await fetch(`${API_URL}/auditoria/aleatorios`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch random products: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Salva registros de auditoria de estoque
+ * 
+ * @param {Array} auditorias - Array com dados de auditoria
+ * @returns {Promise<Object>} Resultado da operação
+ * @throws {Error} Se falhar requisição
+ */
+export async function salvarAuditoria(auditorias) {
+  const response = await fetch(`${API_URL}/auditoria/salvar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ auditorias })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to save audit: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Busca histórico de auditorias
+ * 
+ * @param {number} page - Número da página
+ * @param {number} limit - Quantidade por página
+ * @returns {Promise<Object>} Histórico com paginação
+ * @throws {Error} Se falhar requisição
+ */
+export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
+  const response = await fetch(`${API_URL}/auditoria/historico?page=${page}&limit=${limit}`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch audit history: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  return result;
+}
+
 
 /**
  * Busca todas as categorias de produtos

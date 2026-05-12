@@ -105,6 +105,11 @@
   color: var(--indigo-dark);
 }
 
+.btnGreen {
+  background-color: rgb(76, 175, 80);
+  color: white;
+}
+
 .btnOrange {
   background: var(--peach-dark);
   color: var(--white);
