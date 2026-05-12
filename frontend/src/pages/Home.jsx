@@ -179,7 +179,6 @@ function Home() {
 
         <section id="catalog" className={styles.catalogSection}>
           <div className={styles.sectionHeader}>
-            <div />
             <span className={styles.catalogCount}>{filteredProducts.length} itens encontrados</span>
           </div>
 
