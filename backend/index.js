@@ -1,7 +1,7 @@
 const path = require('path');
 const loadEnv = require('./src/config/loadEnv');
 
-loadEnv(path.resolve(__dirname, '.env'));
+loadEnv(path.resolve(__dirname, '.env'), { override: true });
 
 const app = require('./src/app');
 const db = require('./src/database/models');

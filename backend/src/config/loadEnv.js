@@ -1,6 +1,8 @@
 const fs = require('fs');
 
-module.exports = function loadEnv(filePath) {
+module.exports = function loadEnv(filePath, options = {}) {
+  const override = Boolean(options.override);
+
   if (!fs.existsSync(filePath)) {
     return;
   }
@@ -23,7 +25,7 @@ module.exports = function loadEnv(filePath) {
     const key = trimmed.slice(0, separatorIndex).trim();
     let value = trimmed.slice(separatorIndex + 1).trim();
 
-    if (!key || process.env[key] !== undefined) {
+    if (!key || (!override && process.env[key] !== undefined)) {
       return;
     }
 
