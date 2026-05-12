@@ -6,13 +6,16 @@ const ALLOWED_MOVEMENT_REASONS = new Set(['compra', 'venda', 'ajuste']);
 
 // Utility function to generate slug from product name for URL-friendly routing
 function generateSlug(nome) {
-  return String(nome || '')
+  if (!nome || typeof nome !== 'string') return '';
+  
+  return nome
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
-    .replace(/[^\w\s-]/g, '') // Remove special chars
-    .replace(/[\s_-]+/g, '-') // Replace spaces/underscores/hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    .trim()
+    .normalize('NFD')                          // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, '')           // Remove accent marks
+    .replace(/[^a-z0-9\s-]/g, '')              // Remove non-alphanumeric except spaces/hyphens
+    .replace(/[\s_-]+/g, '-')                  // Replace spaces/underscores with hyphens
+    .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
 }
 
 function toNumberOrNull(value) {
@@ -250,10 +253,14 @@ exports.buscarProdutoPorNome = async (nome) => {
     ],
   });
 
-  const produto = produtos.find(p => generateSlug(p.nome) === slug);
+  const produto = produtos.find(p => {
+    const productSlug = generateSlug(p.nome);
+    return productSlug === slug;
+  });
 
   if (!produto) {
-    throw new AppError(404, 'Produto not found');
+    console.error(`Product not found: searched for slug "${slug}" matching input "${nome}"`);
+    throw new AppError(404, 'Produto não encontrado');
   }
 
   return toProdutoPayload(produto);

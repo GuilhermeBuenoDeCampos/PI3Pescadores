@@ -89,6 +89,24 @@ export async function fetchProductById(id) {
   return result.data;
 }
 
+/**
+ * Busca um produto específico pelo nome (slug)
+ * 
+ * @param {string} nome - Nome/slug do produto
+ * @returns {Promise<Object>} Dados do produto
+ * @throws {Error} Se falhar requisição ou produto não encontrado
+ */
+export async function fetchProductByName(nome) {
+  const response = await fetch(`${API_URL}/produtos/nome/${encodeURIComponent(nome)}`);
+  
+  if (!response.ok) {
+    throw new Error(`Produto não encontrado: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
 
 /**
  * Busca todas as categorias de produtos
