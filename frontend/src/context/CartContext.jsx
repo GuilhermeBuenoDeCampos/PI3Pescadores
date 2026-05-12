@@ -1,10 +1,25 @@
-import { createContext, useContext, useReducer } from 'react';
+import { createContext, useContext, useReducer, useEffect } from 'react';
 
 const CartContext = createContext();
+
+const STORAGE_KEY = 'tp_cart_v1';
 
 const initialState = {
   items: [], // { product, quantity }
 };
+
+function loadInitialState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return initialState;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.items)) return parsed;
+    return initialState;
+  } catch (err) {
+    console.error('Failed to load cart from storage', err);
+    return initialState;
+  }
+}
 
 function cartReducer(state, action) {
   switch (action.type) {
@@ -51,7 +66,16 @@ function cartReducer(state, action) {
 }
 
 export function CartProvider({ children }) {
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [state, dispatch] = useReducer(cartReducer, undefined, () => loadInitialState());
+
+  // persist to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.error('Failed to save cart to storage', err);
+    }
+  }, [state]);
 
   const addToCart = product => dispatch({ type: 'ADD_TO_CART', product });
   const decreaseQuantity = productId => dispatch({ type: 'DECREASE_QUANTITY', productId });

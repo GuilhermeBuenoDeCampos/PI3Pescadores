@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchProductById, fetchProductByName, fetchProducts, getImageUrl } from '../services/api';
 
 import Header from '../components/Header';
@@ -13,6 +13,8 @@ import { formatPrice } from '../utils/productUtils';
 
 function ProductPage() {
   const { addToCart = () => {} } = useCart() || {};
+  const navigate = useNavigate();
+  const [justAdded, setJustAdded] = useState(false);
   const { id, nome } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
@@ -123,24 +125,26 @@ function ProductPage() {
               <img src={mainImgSrc} alt={product.nome} onError={() => setMainImgSrc(semImagem)} />
             </div>
 
-            <div className={styles.thumbnailList}>
-              {product.imagens?.map((imagem) => {
-                const imgUrl = getImageUrl(imagem.url);
-                return (
-                  <button
-                    key={imagem.id}
-                    type="button"
-                    className={`${styles.thumbnailButton} ${activeImage === imgUrl ? styles.active : ''}`}
-                    onClick={() => {
-                      setActiveImage(imgUrl);
-                      setMainImgSrc(imgUrl);
-                    }}
-                  >
-                    <img src={imgUrl} alt={`Miniatura de ${product.nome}`} />
-                  </button>
-                );
-              })}
-            </div>
+            {product.imagens && product.imagens.length > 1 && (
+              <div className={styles.thumbnailList}>
+                {product.imagens.slice(1).map((imagem) => {
+                  const imgUrl = getImageUrl(imagem.url);
+                  return (
+                    <button
+                      key={imagem.id}
+                      type="button"
+                      className={`${styles.thumbnailButton} ${activeImage === imgUrl ? styles.active : ''}`}
+                      onClick={() => {
+                        setActiveImage(imgUrl);
+                        setMainImgSrc(imgUrl);
+                      }}
+                    >
+                      <img src={imgUrl} alt={`Miniatura de ${product.nome}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <aside className={styles.summaryCard}>
@@ -191,16 +195,27 @@ function ProductPage() {
             )}
 
             <div className={styles.actionGroup}>
-              <button className={`${styles.btn} ${styles.primaryButton}`} onClick={() => addToCart(product)}>
-                Adicionar ao carrinho
+              <button
+                className={`${styles.btn} ${styles.primaryButton}`}
+                onClick={() => {
+                  addToCart(product);
+                  setJustAdded(true);
+                  setTimeout(() => setJustAdded(false), 1800);
+                }}
+                aria-live="polite"
+              >
+                {justAdded ? 'Adicionado' : 'Adicionar ao carrinho'}
               </button>
-              <Link
-                to="/carrinho"
+              <button
+                type="button"
                 className={`${styles.btn} ${styles.secondaryButton}`}
-                onClick={() => addToCart(product)}
+                onClick={() => {
+                  addToCart(product);
+                  navigate('/carrinho');
+                }}
               >
                 Comprar agora
-              </Link>
+              </button>
             </div>
 
             <div className={styles.badgeGroup}>
