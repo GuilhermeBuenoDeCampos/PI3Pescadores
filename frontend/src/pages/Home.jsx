@@ -8,7 +8,7 @@ import SectionTitle from '../components/SectionTitle';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { fetchProducts, fetchCategories } from '../services/api';
-import { filterProducts, sortProductsByPrice } from '../utils/productUtils';
+import { sortProductsByPrice } from '../utils/productUtils';
 import styles from './Home.module.css';
 
 function Home() {
@@ -61,14 +61,10 @@ function Home() {
       if (!products.length) return [];
 
       let filtered = products;
-<<<<<<< HEAD
-      
+
       // Filtro por status ativo
       filtered = filtered.filter(p => p.ativo !== false);
-      
-=======
 
->>>>>>> 8d241cc (Atualização frontend)
       // Filtro por categoria
       const activeCategoryNormalized = normalizeCategory(activeCategory);
       if (activeCategoryNormalized !== 'todos') {

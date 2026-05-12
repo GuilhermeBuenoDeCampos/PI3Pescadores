@@ -12,9 +12,18 @@
 
 // URL base do backend - Configurável via variáveis de ambiente
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 const API_URL = `${BACKEND_URL}/api`;
+
+async function parseApiError(response, fallbackMessage) {
+  try {
+    const body = await response.json();
+    return body?.error?.message || body?.message || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
 
 /**
  * Constrói URL completa para imagens
@@ -63,7 +72,7 @@ export async function fetchProducts(filters = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch products: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -82,7 +91,7 @@ export async function fetchProductById(id) {
   const response = await fetch(`${API_URL}/produtos/${id}`);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch product: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch product: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -100,7 +109,7 @@ export async function fetchProductByName(nome) {
   const response = await fetch(`${API_URL}/produtos/nome/${encodeURIComponent(nome)}`);
   
   if (!response.ok) {
-    throw new Error(`Produto não encontrado: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Produto não encontrado: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -118,7 +127,7 @@ export async function fetchCategories() {
   const response = await fetch(`${API_URL}/categorias`);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch categories: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch categories: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -141,7 +150,7 @@ export async function updateProductStatus(id, ativo) {
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to update product status: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to update product status: ${response.statusText}`));
   }
 
   const result = await response.json();

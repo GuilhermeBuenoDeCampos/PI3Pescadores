@@ -10,7 +10,14 @@ export function formatPrice(preco) {
  * Retorna todas as categorias únicas incluidas no catálogo de produtos.
  */
 export function getProductCategories(products) {
-  return ['Todos', ...new Set(products.map((product) => product.category))];
+  return [
+    'Todos',
+    ...new Set(
+      products
+        .map((product) => product.categoria?.nome || product.category)
+        .filter(Boolean)
+    ),
+  ];
 }
 
 /**
@@ -29,7 +36,11 @@ export function getRelatedProducts(products, currentProduct, limit = 4) {
   }
 
   return products
-    .filter((product) => product.category === currentProduct.category && product.id !== currentProduct.id)
+    .filter((product) => {
+      const productCategory = product.categoria?.nome || product.category;
+      const currentCategory = currentProduct.categoria?.nome || currentProduct.category;
+      return productCategory === currentCategory && product.id !== currentProduct.id;
+    })
     .slice(0, limit);
 }
 
@@ -37,7 +48,16 @@ export function getRelatedProducts(products, currentProduct, limit = 4) {
  * Converte string de preço para número.
  */
 export function parsePrice(priceString) {
-  return parseFloat(priceString.replace('R$ ', '').replace(',', '.'));
+  if (priceString === null || priceString === undefined || priceString === '') {
+    return 0;
+  }
+
+  if (typeof priceString === 'number') {
+    return Number.isFinite(priceString) ? priceString : 0;
+  }
+
+  const parsed = Number(String(priceString).replace('R$ ', '').replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /**
@@ -45,8 +65,8 @@ export function parsePrice(priceString) {
  */
 export function sortProductsByPrice(products, ascending) {
   return [...products].sort((a, b) => {
-    const priceA = a.preco_venda || 0;
-    const priceB = b.preco_venda || 0;
+    const priceA = Number(a.preco_venda || 0);
+    const priceB = Number(b.preco_venda || 0);
     return ascending ? priceA - priceB : priceB - priceA;
   });
 }
@@ -56,7 +76,7 @@ export function sortProductsByPrice(products, ascending) {
  */
 export function filterProductsByPrice(products, min, max) {
   return products.filter((product) => {
-    const price = parsePrice(product.price);
+    const price = parsePrice(product.preco_venda ?? product.price);
     return price >= min && price <= max;
   });
 }
@@ -68,9 +88,11 @@ export function filterProducts(products, selectedCategory, searchTerm, minPrice,
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   return products.filter((product) => {
-    const categoryMatches = selectedCategory === 'Todos' || product.category === selectedCategory;
-    const searchMatches = product.name.toLowerCase().includes(normalizedSearch);
-    const price = parsePrice(product.price);
+    const category = product.categoria?.nome || product.category;
+    const name = product.nome || product.name || '';
+    const categoryMatches = selectedCategory === 'Todos' || category === selectedCategory;
+    const searchMatches = name.toLowerCase().includes(normalizedSearch);
+    const price = parsePrice(product.preco_venda ?? product.price);
     const priceMatches = price >= minPrice && price <= maxPrice;
     return categoryMatches && searchMatches && priceMatches;
   });

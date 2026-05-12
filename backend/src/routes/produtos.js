@@ -18,8 +18,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.get('/', produtoController.listar);
-// Debug endpoint to list all products with their slugs
-router.get('/debug/slugs', produtoController.debugSlugs);
 router.get('/nome/:nome', produtoController.detalharPorNome);
 router.get('/:id', produtoController.detalhar);
 router.post('/', upload.array('imagens', 10), produtoController.criar);

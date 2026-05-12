@@ -1,5 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { fetchCategories, fetchProducts, fetchProductById, getImageUrl, updateProductStatus } from '../services/api';
+import { useState, useEffect } from 'react';
+import {
+  BACKEND_URL,
+  fetchCategories,
+  fetchProducts,
+  fetchProductById,
+  getImageUrl,
+  updateProductStatus,
+} from '../services/api';
+import logo from '../assets/logo/logo.png';
 import styles from './StockManagement.module.css';
 
 const StockManagement = () => {
@@ -13,22 +21,20 @@ const StockManagement = () => {
   const [editProduct, setEditProduct] = useState(null);
   // Single launch
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState(null);
   const [launchQuantity, setLaunchQuantity] = useState(0);
   const [singleSuggestions, setSingleSuggestions] = useState([]);
   const [singleSelectedProduct, setSingleSelectedProduct] = useState(null);
   const [singleActiveIndex, setSingleActiveIndex] = useState(-1);
   // Mass launch
   const [massItems, setMassItems] = useState([]); // { id_produto, quantidade }
-  const [massSearchTerm, setMassSearchTerm] = useState('');
-  const [massSuggestions, setMassSuggestions] = useState([]);
-  const [massSelectedProduct, setMassSelectedProduct] = useState(null);
-  const [massQtyInput, setMassQtyInput] = useState('');
-  const [massActiveIndex, setMassActiveIndex] = useState(-1);
   // Settings
   const [autoDisableZeroStock, setAutoDisableZeroStock] = useState(() => {
-    const saved = localStorage.getItem('autoDisableZeroStock');
-    return saved ? JSON.parse(saved) : false;
+    try {
+      const saved = localStorage.getItem('autoDisableZeroStock');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
   });
 
   const loadData = async () => {
@@ -59,7 +65,6 @@ const StockManagement = () => {
         if (product.estoque_atual === 0 && product.ativo !== false) {
           try {
             await updateProductStatus(product.id, false);
-            console.log(`Produto ${product.nome} desativado automaticamente por falta de estoque`);
           } catch (err) {
             console.error(`Erro ao desativar produto ${product.id}:`, err);
           }
@@ -125,20 +130,22 @@ const StockManagement = () => {
     // Acrescentar as imagens arrastadas/adicionadas
     // O backend multer recebe o arquivo no campo 'imagens'
     formData.delete('imagens'); // Remove caso já exista algo no form nativamente
-    selectedImages.forEach(img => {
-      formData.append('imagens', img.file);
-    });
+    selectedImages
+      .filter((img) => img.file instanceof File)
+      .forEach((img) => {
+        formData.append('imagens', img.file);
+      });
 
     try {
       let response;
       if (editProduct && editProduct.id) {
         // use POST to update when sending multipart FormData from the browser
-        response = await fetch(`http://localhost:3000/api/produtos/${editProduct.id}`, {
+        response = await fetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
           method: 'POST',
           body: formData,
         });
       } else {
-        response = await fetch('http://localhost:3000/api/produtos', {
+        response = await fetch(`${BACKEND_URL}/api/produtos`, {
           method: 'POST',
           body: formData,
         });
@@ -173,7 +180,7 @@ const StockManagement = () => {
     if (!newCategoryName.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/categorias', {
+      const response = await fetch(`${BACKEND_URL}/api/categorias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: newCategoryName })
@@ -187,35 +194,6 @@ const StockManagement = () => {
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar categoria!');
-    }
-  };
-
-  // Single product launch
-  const handleSingleLaunch = async (e) => {
-    e.preventDefault();
-    if (!selectedProductId || !Number.isInteger(Number(launchQuantity)) || Number(launchQuantity) <= 0) {
-      alert('Selecione um produto válido e informe uma quantidade maior que zero.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3000/api/produtos/${selectedProductId}/movimentacoes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo: 'entrada', motivo: 'compra', quantidade: Number(launchQuantity) }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err && err.error ? err.error.message : 'Falha ao lançar produto');
-      }
-
-      alert('Lançamento realizado com sucesso');
-      closeModal();
-      loadData();
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao lançar produto: ' + err.message);
     }
   };
 
@@ -235,7 +213,6 @@ const StockManagement = () => {
 
   const selectSingleSuggestion = (product) => {
     setSingleSelectedProduct(product);
-    setSelectedProductId(product.id);
     setSearchTerm(product.nome);
     setSingleSuggestions([]);
     setSingleActiveIndex(-1);
@@ -273,49 +250,10 @@ const StockManagement = () => {
       return [...prev, { id_produto: pid, quantidade: q, nome: productObj.nome }];
     });
     // reset inputs
-    setMassSearchTerm('');
-    setMassSuggestions([]);
-    setMassSelectedProduct(null);
-    setMassQtyInput('');
-  };
-
-  const handleMassSearchChange = (value) => {
-    setMassSearchTerm(value);
-    if (!value) {
-      setMassSuggestions([]);
-      return;
-    }
-    const q = value.toLowerCase();
-    const suggestions = products
-      .filter(p => p.nome && p.nome.toLowerCase().includes(q))
-      .slice(0, 8)
-      .map(p => ({ id: p.id, nome: p.nome }));
-    setMassSuggestions(suggestions);
-  };
-
-  const selectMassSuggestion = (product) => {
-    setMassSelectedProduct(product);
-    setMassSearchTerm(product.nome);
-    setMassSuggestions([]);
-    setMassActiveIndex(-1);
-  };
-
-  const handleMassKeyDown = (e) => {
-    if (!massSuggestions || massSuggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setMassActiveIndex((i) => Math.min(i + 1, massSuggestions.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setMassActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const sel = massSuggestions[massActiveIndex >= 0 ? massActiveIndex : 0];
-      if (sel) selectMassSuggestion(sel);
-    } else if (e.key === 'Escape') {
-      setMassSuggestions([]);
-      setMassActiveIndex(-1);
-    }
+    setSearchTerm('');
+    setSingleSuggestions([]);
+    setSingleSelectedProduct(null);
+    setLaunchQuantity('');
   };
 
   const handleToggleActive = async (productId, currentStatus) => {
@@ -331,7 +269,11 @@ const StockManagement = () => {
   const handleToggleAutoDisableZeroStock = () => {
     const newValue = !autoDisableZeroStock;
     setAutoDisableZeroStock(newValue);
-    localStorage.setItem('autoDisableZeroStock', JSON.stringify(newValue));
+    try {
+      localStorage.setItem('autoDisableZeroStock', JSON.stringify(newValue));
+    } catch (err) {
+      console.error('Erro ao salvar configuração local:', err);
+    }
   };
 
   const handleMassLaunch = async (e) => {
@@ -350,7 +292,7 @@ const StockManagement = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/produtos/movimentacoes/massa', {
+      const response = await fetch(`${BACKEND_URL}/api/produtos/movimentacoes/massa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movimentacoes: massItems.map(item => ({ id_produto: item.id_produto, tipo: 'entrada', quantidade: Number(item.quantidade), motivo: 'compra' })) }),
@@ -376,7 +318,7 @@ const StockManagement = () => {
       <div className={styles.contentWrapper}>
         {/* Header */}
         <header className={styles.header}>
-          <img src="/src/assets/logo/logo.png" alt="Tres Pescadores Store Logo" className={styles.logo} onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }} />
+          <img src={logo} alt="Tres Pescadores Store Logo" className={styles.logo} />
           <div className={styles.titleContainer}>
             <h1>Tres Pescadores Store</h1>
             <div className={styles.subtitle}>Gerenciar Estoque</div>

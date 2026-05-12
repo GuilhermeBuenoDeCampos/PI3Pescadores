@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProductById, fetchProductByName, fetchProducts, getImageUrl } from '../services/api';
 
@@ -11,28 +11,9 @@ import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../utils/productUtils';
 
-// Utility function to generate slug (matches backend implementation)
-function generateSlug(nome) {
-  if (!nome || typeof nome !== 'string') return '';
-  
-  return nome
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')                          // Decompose accented characters
-    .replace(/[\u0300-\u036f]/g, '')           // Remove accent marks
-    .replace(/[^a-z0-9\s-]/g, '')              // Remove non-alphanumeric except spaces/hyphens
-    .replace(/[\s_-]+/g, '-')                  // Replace spaces/underscores with hyphens
-    .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
-}
-
 function ProductPage() {
-<<<<<<< HEAD
-  const { addToCart } = useCart ? useCart() : { addToCart: () => {} };
-  const { id, nome } = useParams();
-=======
   const { addToCart = () => {} } = useCart() || {};
-  const { id } = useParams();
->>>>>>> 8d241cc (Atualização frontend)
+  const { id, nome } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
@@ -44,7 +25,6 @@ function ProductPage() {
     const loadProduct = async () => {
       try {
         setLoading(true);
-<<<<<<< HEAD
         let productData;
 
         if (nome) {
@@ -55,12 +35,10 @@ function ProductPage() {
           productData = await fetchProductById(id);
         }
 
-=======
-        const productData = await fetchProductById(id);
         if (!productData) {
           throw new Error('Produto não encontrado');
         }
->>>>>>> 8d241cc (Atualização frontend)
+
         setProduct(productData);
         setActiveImage(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
         setMainImgSrc(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
@@ -98,7 +76,7 @@ function ProductPage() {
     }
   }, [product]);
 
-  const productPrice = Number(product?.preco_venda ?? 0).toFixed(2);
+  const productPrice = formatPrice(product?.preco_venda);
 
   if (loading) {
     return (
@@ -172,14 +150,6 @@ function ProductPage() {
             </div>
 
             <h1>{product.nome}</h1>
-<<<<<<< HEAD
-            <p className={styles.productPrice}>R$ {formatPrice(product.preco_venda)}</p>
-            <p className={styles.productDescription}>{product.descricao}</p>
-            <button className={styles.addToCartBtn} onClick={() => addToCart(product)}>
-              Adicionar ao carrinho
-            </button>
-            <ProductDetailsCard product={product} />
-=======
 
             <div className={styles.priceBlock}>
               <p className={styles.productPrice}>R$ {productPrice}</p>
@@ -244,7 +214,6 @@ function ProductPage() {
           <div className={styles.descriptionSection}>
             <h2>Descrição do produto</h2>
             <p>{product.descricao}</p>
->>>>>>> 8d241cc (Atualização frontend)
           </div>
           <aside className={styles.detailsSidebar}>
             <ProductDetailsCard product={product} />

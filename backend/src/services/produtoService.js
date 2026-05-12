@@ -18,9 +18,6 @@ function generateSlug(nome) {
     .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
 }
 
-// Export for debugging purposes
-exports.generateSlugForDebug = generateSlug;
-
 function toNumberOrNull(value) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -262,14 +259,6 @@ exports.buscarProdutoPorNome = async (nome) => {
   });
 
   if (!produto) {
-    // Debug info: show available slugs
-    const availableSlugs = produtos.map(p => ({
-      nome: p.nome,
-      slug: generateSlug(p.nome),
-    }));
-    console.error(`Product not found:`);
-    console.error(`  Searched for: "${nome}" → slug: "${slug}"`);
-    console.error(`  Available products:`, availableSlugs);
     throw new AppError(404, 'Produto não encontrado');
   }
 
@@ -504,17 +493,7 @@ exports.registrarMovimentacao = async (idProduto, payload) => {
 };
 
 exports.registrarMovimentacoesEmMassa = async (payload) => {
-  // Normalize payload: accept either { movimentacoes: [...] } or an array directly
   const received = payload;
-  // helpful debug log when unexpected payloads arrive
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      console.warn('registrarMovimentacoesEmMassa received payload:', JSON.stringify(received));
-    } catch (e) {
-      console.warn('registrarMovimentacoesEmMassa received payload (non-serializable)');
-    }
-  }
-
   const movimentacoesInput = Array.isArray(received)
     ? received
     : (received && Array.isArray(received.movimentacoes) ? received.movimentacoes : null);

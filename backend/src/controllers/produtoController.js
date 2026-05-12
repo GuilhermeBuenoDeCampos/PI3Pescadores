@@ -1,5 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const produtoService = require('../services/produtoService');
+const uploadService = require('../services/uploadService');
 
 function parseId(value) {
   const id = Number(value);
@@ -51,127 +52,9 @@ exports.detalharPorNome = asyncHandler(async (req, res) => {
   });
 });
 
-exports.debugSlugs = asyncHandler(async (req, res) => {
-  // Debug endpoint - returns all products with their generated slugs
-  const produtos = await produtoService.listarProdutos({});
-  
-  const slugs = produtos.map(p => ({
-    id: p.id,
-    nome: p.nome,
-    slug: require('../services/produtoService').generateSlugForDebug(p.nome),
-  }));
-
-  res.json({
-    data: slugs,
-    total: slugs.length,
-  });
-});
-
-const fs = require('fs');
-const path = require('path');
-const supabase = require('../utils/supabaseClient');
-
-async function uploadFilesToSupabase(files) {
-  const bucket = process.env.SUPABASE_BUCKET || 'PI3Pescadores';
-  const uploadedUrls = [];
-
-  // quick check: verify bucket exists and is accessible
-  let bucketAvailable = true;
-  if (supabase) {
-    try {
-      const { data: listData, error: listError } = await supabase.storage.from(bucket).list('', { limit: 1 });
-      if (listError) {
-        console.error('Supabase bucket check failed for', bucket, listError);
-        bucketAvailable = false;
-      }
-    } catch (e) {
-      console.error('Error checking Supabase bucket availability for', bucket, e && e.message ? e.message : e);
-      bucketAvailable = false;
-    }
-  } else {
-    bucketAvailable = false;
-  }
-
-  for (const file of files) {
-    const filePath = file.path; // local path
-    const destFilename = path.basename(filePath);
-
-    // If supabase is not configured or bucket is not available, fallback to local storage
-    if (!supabase || !bucketAvailable) {
-      uploadedUrls.push(`/uploads/${destFilename}`);
-      continue;
-    }
-
-    // Put files under a folder in the bucket to avoid collisions
-  // sanitize filename: keep extension, replace unsafe chars with '-'
-  const ext = path.extname(destFilename);
-  const nameOnly = path.basename(destFilename, ext);
-  const safeName = nameOnly.replace(/[^a-zA-Z0-9-_\.]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
-  const finalFilename = `${safeName}${ext}`;
-  const destPath = `uploads/${finalFilename}`;
-
-  console.log('Uploading file', destFilename, '->', destPath);
-
-    try {
-      const fileStream = fs.createReadStream(filePath);
-
-      const { data, error } = await supabase.storage.from(bucket).upload(destPath, fileStream, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.mimetype || undefined,
-      });
-
-      if (error) {
-        console.error('Supabase upload error for', destPath, error);
-        uploadedUrls.push(`/uploads/${destFilename}`);
-        continue;
-      }
-
-      // generate signed URL (preferred) or fallback to public URL
-      const expiresIn = Number(process.env.SUPABASE_SIGNED_URL_EXPIRES) || 3600; // seconds
-      let finalUrl = null;
-
-      try {
-        const { data: signedData, error: signedError } = await supabase.storage.from(bucket).createSignedUrl(destPath, expiresIn);
-        if (signedError) {
-          console.warn('Failed to create signed URL for', destPath, signedError);
-        } else {
-          // SDK may return signedURL or signedUrl depending on version
-          finalUrl = signedData?.signedURL || signedData?.signedUrl || null;
-        }
-      } catch (e) {
-        console.warn('Error creating signed URL for', destPath, e && e.message ? e.message : e);
-      }
-
-      if (!finalUrl) {
-        // try public URL as fallback
-        const { data: publicData, error: publicError } = supabase.storage.from(bucket).getPublicUrl(destPath);
-        if (publicError) {
-          console.warn('Failed to get public URL for', destPath, publicError);
-        }
-        finalUrl = publicData?.publicUrl || null;
-      }
-
-      uploadedUrls.push(finalUrl || `/uploads/${destFilename}`);
-
-      // remove local file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (e) {
-        console.warn('Failed to remove local file', filePath, e.message);
-      }
-    } catch (ex) {
-      console.error('Unexpected error uploading to Supabase for', destFilename, ex && ex.message ? ex.message : ex);
-      uploadedUrls.push(`/uploads/${destFilename}`);
-    }
-  }
-
-  return uploadedUrls;
-}
-
 exports.criar = asyncHandler(async (req, res) => {
   const files = req.files || [];
-  const fileUrls = await uploadFilesToSupabase(files);
+  const fileUrls = await uploadService.uploadMultipleFiles(files);
 
   const payload = {
     ...req.body,
@@ -241,16 +124,6 @@ function parseMovimentacoesPayload(payload) {
 
 exports.registrarMovimentacoesEmMassa = asyncHandler(async (req, res) => {
   const payload = parseMovimentacoesPayload(req.body);
-
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      console.warn('registrarMovimentacoesEmMassa headers content-type:', req.headers['content-type']);
-      console.warn('registrarMovimentacoesEmMassa payload sample:', JSON.stringify(Array.isArray(payload) ? { movimentacoesLength: payload.length } : { hasMovimentacoes: !!(payload && payload.movimentacoes) }));
-    } catch (e) {
-      // ignore
-    }
-  }
-
   const result = await produtoService.registrarMovimentacoesEmMassa(payload);
 
   res.status(201).json({
@@ -267,7 +140,7 @@ exports.atualizar = asyncHandler(async (req, res) => {
 
   // files handled by multer are already saved; upload them to Supabase and collect URLs
   const files = req.files || [];
-  const fileUrls = await uploadFilesToSupabase(files);
+  const fileUrls = await uploadService.uploadMultipleFiles(files);
   const payload = { ...req.body, imagens: fileUrls };
 
   const updated = await produtoService.atualizarProduto(id, payload);
