@@ -175,40 +175,7 @@ function Home() {
           </div>
         </section>
 
-        <section id="categories" className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.sectionLabel}>Explore o catálogo</span>
-              <h2>Categorias</h2>
-            </div>
-            <a href="#catalog" className={styles.seeAll}>Ver catálogo →</a>
-          </div>
-
-          <div className={styles.categoriesGrid}>
-            {visibleCategories.length === 0 ? (
-              <p className={styles.emptyState}>Carregando categorias...</p>
-            ) : (
-              visibleCategories.map((category, index) => (
-                <button
-                  key={category}
-                  type="button"
-                  className={styles.categoryCard}
-                  onClick={() => {
-                    setActiveCategory(category);
-                    setSearchQuery('');
-                    setSearchText('');
-                  }}
-                >
-                  <span className={`${styles.categoryIcon} ${styles[`categoryTone${index + 1}`]}`}>
-                    {['✝', '📿', '📖', '🕯', '⛪'][index] || '✦'}
-                  </span>
-                  <span className={styles.categoryName}>{category}</span>
-                  <small>{getCategoryCount(category)} produtos</small>
-                </button>
-              ))
-            )}
-          </div>
-        </section>
+        
 
         <section id="catalog" className={styles.catalogSection}>
           <div className={styles.sectionHeader}>
