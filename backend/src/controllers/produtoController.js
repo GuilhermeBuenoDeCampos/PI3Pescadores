@@ -51,6 +51,22 @@ exports.detalharPorNome = asyncHandler(async (req, res) => {
   });
 });
 
+exports.debugSlugs = asyncHandler(async (req, res) => {
+  // Debug endpoint - returns all products with their generated slugs
+  const produtos = await produtoService.listarProdutos({});
+  
+  const slugs = produtos.map(p => ({
+    id: p.id,
+    nome: p.nome,
+    slug: require('../services/produtoService').generateSlugForDebug(p.nome),
+  }));
+
+  res.json({
+    data: slugs,
+    total: slugs.length,
+  });
+});
+
 const fs = require('fs');
 const path = require('path');
 const supabase = require('../utils/supabaseClient');

@@ -18,6 +18,9 @@ function generateSlug(nome) {
     .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
 }
 
+// Export for debugging purposes
+exports.generateSlugForDebug = generateSlug;
+
 function toNumberOrNull(value) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -259,7 +262,14 @@ exports.buscarProdutoPorNome = async (nome) => {
   });
 
   if (!produto) {
-    console.error(`Product not found: searched for slug "${slug}" matching input "${nome}"`);
+    // Debug info: show available slugs
+    const availableSlugs = produtos.map(p => ({
+      nome: p.nome,
+      slug: generateSlug(p.nome),
+    }));
+    console.error(`Product not found:`);
+    console.error(`  Searched for: "${nome}" → slug: "${slug}"`);
+    console.error(`  Available products:`, availableSlugs);
     throw new AppError(404, 'Produto não encontrado');
   }
 
