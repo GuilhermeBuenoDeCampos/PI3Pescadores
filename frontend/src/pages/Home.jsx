@@ -137,10 +137,6 @@ function Home() {
 
           <div className={styles.heroRight}>
             <BannerCarousel />
-            <div className={styles.heroSeal}>
-              <strong>{totalProducts || '...'}</strong>
-              <span>produtos no catálogo</span>
-            </div>
           </div>
         </section>
 
