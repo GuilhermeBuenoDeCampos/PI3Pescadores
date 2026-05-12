@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import './cart.css';
+import { formatPrice } from '../utils/productUtils';
 
 const RECOMMENDED = [
   { id: 101, nome: 'Terço de Cristal Premium', preco_venda: 65.00, categoria: { nome: 'Terços' } },
@@ -32,13 +33,10 @@ function CartPage() {
     return total + price * item.quantity;
   }, 0);
 
-  const shipping = subtotal > 0 ? 0 : 0; // Frete grátis
-  const taxes = subtotal * 0.05; // 5% de imposto simulado
-  const total = subtotal + shipping + taxes - couponDiscount;
+  const shipping = 0; // Frete grátis no momento
+  const total = subtotal + shipping - couponDiscount;
   
   const totalItems = displayItems.reduce((total, item) => total + item.quantity, 0);
-  const formatMoney = (value) => Number(value ?? 0).toFixed(2);
-
   const applyCoupon = () => {
     if (couponCode.toLowerCase() === 'desc10') {
       setCouponDiscount(subtotal * 0.1);
@@ -91,7 +89,7 @@ function CartPage() {
                 </div>
 
                 <div className="item-price-box">
-                  <span className="current-price">R$ {formatMoney(product.preco_venda ?? product.preco)}</span>
+                  <span className="current-price">R$ {formatPrice(product.preco_venda ?? product.preco)}</span>
                 </div>
               </div>
             ))}
@@ -101,11 +99,11 @@ function CartPage() {
             <h3 className="summary-title">Resumo da compra</h3>
             <div className="summary-item">
               <span>Produtos ({totalItems})</span>
-              <span>R$ {subtotal.toFixed(2)}</span>
+              <span>R$ {formatPrice(subtotal)}</span>
             </div>
             <div className="summary-item total">
               <span>Total</span>
-              <span>R$ {total.toFixed(2)}</span>
+              <span>R$ {formatPrice(total)}</span>
             </div>
             <button className="btn-checkout">Continuar compra</button>
           </div>
