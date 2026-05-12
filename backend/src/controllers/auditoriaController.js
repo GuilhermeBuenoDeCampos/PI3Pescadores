@@ -4,40 +4,39 @@ const db = require('../database/models');
 
 // Get 5 random products for audit
 exports.getProdutosAleatorios = asyncHandler(async (req, res) => {
+  // Get 5 random products
   const produtos = await db.Produto.findAll({
     attributes: ['id', 'nome', 'preco_venda'],
     limit: 5,
     order: db.sequelize.random(),
-    include: [
-      {
-        model: db.EstoqueMovimentacao,
-        as: 'movimentacoesEstoque',
-        attributes: ['quantidade'],
-        required: false,
-      },
-    ],
   });
 
-  // Calculate current stock for each product
-  const produtosComEstoque = produtos.map((p) => {
-    const movimentacoes = p.movimentacoesEstoque || [];
-    let estoque = 0;
-    
-    movimentacoes.forEach((mov) => {
-      if (mov.tipo === 'entrada') {
-        estoque += mov.quantidade;
-      } else if (mov.tipo === 'saida') {
-        estoque -= mov.quantidade;
-      }
-    });
+  // For each product, calculate stock from movements
+  const produtosComEstoque = await Promise.all(
+    produtos.map(async (p) => {
+      const movimentacoes = await db.EstoqueMovimentacao.findAll({
+        where: { id_produto: p.id },
+        attributes: ['tipo', 'quantidade'],
+      });
 
-    return {
-      id: p.id,
-      nome: p.nome,
-      preco_venda: p.preco_venda,
-      quantidade_sistema: Math.max(0, estoque),
-    };
-  });
+      let estoque = 0;
+      movimentacoes.forEach((mov) => {
+        const quantidade = parseInt(mov.quantidade, 10);
+        if (mov.tipo === 'entrada') {
+          estoque += quantidade;
+        } else if (mov.tipo === 'saida') {
+          estoque -= quantidade;
+        }
+      });
+
+      return {
+        id: p.id,
+        nome: p.nome,
+        preco_venda: p.preco_venda,
+        quantidade_sistema: Math.max(0, estoque),
+      };
+    })
+  );
 
   res.json({
     data: produtosComEstoque,
@@ -56,16 +55,21 @@ exports.salvarAuditoria = asyncHandler(async (req, res) => {
 
   const registros = auditorias.map((item) => {
     const diferenca = item.quantidade_fisica - item.quantidade_sistema;
-    const acuracidade = item.quantidade_sistema === 0 
-      ? 100 
-      : ((item.quantidade_sistema - Math.abs(diferenca)) / item.quantidade_sistema) * 100;
+    
+    // Calculate accuracy: if sistema=0, check if físico=0 (100%) or físico>0 (0%)
+    let acuracidade;
+    if (item.quantidade_sistema === 0) {
+      acuracidade = item.quantidade_fisica === 0 ? 100 : 0;
+    } else {
+      acuracidade = ((item.quantidade_sistema - Math.abs(diferenca)) / item.quantidade_sistema) * 100;
+    }
 
     return {
       product_id: item.product_id,
       quantidade_sistema: item.quantidade_sistema,
       quantidade_fisica: item.quantidade_fisica,
       diferenca,
-      acuracidade: Math.max(0, acuracidade),
+      acuracidade: Math.max(0, Math.min(100, acuracidade)),
       usuario_id: req.user?.id || null,
     };
   });

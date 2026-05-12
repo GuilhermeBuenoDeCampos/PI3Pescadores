@@ -120,9 +120,15 @@ export default function AuditoriaModal({ isOpen, onClose, onSave }) {
                 {auditorias.map((auditoria, index) => {
                   const produto = produtos[index];
                   const diferenca = auditoria.quantidade_fisica - auditoria.quantidade_sistema;
-                  const acuracidade = auditoria.quantidade_sistema === 0 
-                    ? 100 
-                    : ((auditoria.quantidade_sistema - Math.abs(diferenca)) / auditoria.quantidade_sistema) * 100;
+                  
+                  // Calculate accuracy: if sistema=0, check if físico=0 (100%) or físico>0 (0%)
+                  let acuracidade;
+                  if (auditoria.quantidade_sistema === 0) {
+                    acuracidade = auditoria.quantidade_fisica === 0 ? 100 : 0;
+                  } else {
+                    acuracidade = ((auditoria.quantidade_sistema - Math.abs(diferenca)) / auditoria.quantidade_sistema) * 100;
+                  }
+                  acuracidade = Math.max(0, Math.min(100, acuracidade));
 
                   return (
                     <div key={produto.id} className={styles.resultItem}>
