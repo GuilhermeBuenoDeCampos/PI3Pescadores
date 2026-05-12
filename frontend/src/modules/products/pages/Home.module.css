@@ -486,8 +486,7 @@
   .heroLeft,
   .section,
   .catalogSection,
-  .testimonialsSection,
-  .newsletter {
+  .testimonialsSection {
     padding: 48px 1.2rem;
   }
 
@@ -513,13 +512,5 @@
     flex-direction: column;
   }
 
-  .newsletterForm {
-    flex-direction: column;
-  }
-
-  .newsletterForm input,
-  .newsletterForm button {
-    border-radius: 2px;
-    border: 1px solid rgba(61, 78, 143, 0.2);
-  }
+  
 }
