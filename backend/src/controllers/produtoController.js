@@ -1,5 +1,6 @@
 const asyncHandler = require('../utils/asyncHandler');
 const produtoService = require('../services/produtoService');
+const uploadService = require('../services/uploadService');
 
 function parseId(value) {
   const id = Number(value);
@@ -35,12 +36,31 @@ exports.detalhar = asyncHandler(async (req, res) => {
   });
 });
 
+exports.detalharPorNome = asyncHandler(async (req, res) => {
+  const nome = req.params.nome;
+
+  if (!nome || typeof nome !== 'string' || nome.trim().length === 0) {
+    return res.status(400).json({
+      error: { message: 'Invalid product name' },
+    });
+  }
+
+  const produto = await produtoService.buscarProdutoPorNome(nome);
+
+  res.json({
+    data: produto,
+  });
+});
+
 exports.criar = asyncHandler(async (req, res) => {
-  const fileUrls = (req.files || []).map(file => `/uploads/${file.filename}`);
+  const files = req.files || [];
+  const fileUrls = await uploadService.uploadMultipleFiles(files);
+
   const payload = {
     ...req.body,
     imagens: fileUrls
   };
+
   const produto = await produtoService.criarProduto(payload);
 
   res.status(201).json({
@@ -104,16 +124,6 @@ function parseMovimentacoesPayload(payload) {
 
 exports.registrarMovimentacoesEmMassa = asyncHandler(async (req, res) => {
   const payload = parseMovimentacoesPayload(req.body);
-
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      console.warn('registrarMovimentacoesEmMassa headers content-type:', req.headers['content-type']);
-      console.warn('registrarMovimentacoesEmMassa payload sample:', JSON.stringify(Array.isArray(payload) ? { movimentacoesLength: payload.length } : { hasMovimentacoes: !!(payload && payload.movimentacoes) }));
-    } catch (e) {
-      // ignore
-    }
-  }
-
   const result = await produtoService.registrarMovimentacoesEmMassa(payload);
 
   res.status(201).json({
@@ -128,8 +138,9 @@ exports.atualizar = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: { message: 'Invalid produto id' } });
   }
 
-  // files handled by multer are already saved; collect their paths
-  const fileUrls = (req.files || []).map(file => `/uploads/${file.filename}`);
+  // files handled by multer are already saved; upload them to Supabase and collect URLs
+  const files = req.files || [];
+  const fileUrls = await uploadService.uploadMultipleFiles(files);
   const payload = { ...req.body, imagens: fileUrls };
 
   const updated = await produtoService.atualizarProduto(id, payload);

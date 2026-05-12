@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './ProductCard.module.css';
-import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
+import semImagem from '../../assets/ProdutoSemImagem/semimagem.png';
 import { getImageUrl } from '../services/api';
 import { formatPrice } from '../utils/productUtils';
 

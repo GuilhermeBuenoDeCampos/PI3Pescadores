@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchProductById, fetchProducts, getImageUrl } from '../services/api';
+import { fetchProductById, fetchProductByName, fetchProducts, getImageUrl } from '../services/api';
 
 import Header from '../components/Header';
 import ProductDetailsCard from '../components/ProductDetailsCard';
@@ -9,10 +9,11 @@ import Footer from '../components/Footer';
 import styles from './ProductPage.module.css';
 import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
 import { useCart } from '../context/CartContext';
+import { formatPrice } from '../utils/productUtils';
 
 function ProductPage() {
-  const { addToCart } = useCart ? useCart() : { addToCart: () => {} };
-  const { id } = useParams();
+  const { addToCart = () => {} } = useCart() || {};
+  const { id, nome } = useParams();
   const [product, setProduct] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
@@ -24,20 +25,33 @@ function ProductPage() {
     const loadProduct = async () => {
       try {
         setLoading(true);
-        const productData = await fetchProductById(id);
+        let productData;
+
+        if (nome) {
+          // Load by product name (slug)
+          productData = await fetchProductByName(nome);
+        } else {
+          // Load by product ID
+          productData = await fetchProductById(id);
+        }
+
+        if (!productData) {
+          throw new Error('Produto não encontrado');
+        }
+
         setProduct(productData);
         setActiveImage(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
         setMainImgSrc(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
       } catch (err) {
         console.error('Erro ao carregar produto:', err);
-        setError(err.message);
+        setError(err?.message || 'Falha ao carregar o produto');
       } finally {
         setLoading(false);
       }
     };
 
     loadProduct();
-  }, [id]);
+  }, [id, nome]);
 
   useEffect(() => {
     const loadAllProducts = async () => {
@@ -61,6 +75,8 @@ function ProductPage() {
       document.title = `${product.nome} | Tres Pescadores`;
     }
   }, [product]);
+
+  const productPrice = formatPrice(product?.preco_venda);
 
   if (loading) {
     return (
@@ -98,43 +114,110 @@ function ProductPage() {
 
       <main className={styles.productMain}>
         <div className={styles.backLink}>
-          <Link to="/">← Voltar</Link>
+          <Link to="/">← Voltar ao catálogo</Link>
         </div>
 
-        <section className={styles.productLayout}>
+        <section className={styles.productHero}>
           <div className={styles.imageColumn}>
-            <div className={styles.mainImage}>
+            <div className={styles.imageCard}>
               <img src={mainImgSrc} alt={product.nome} onError={() => setMainImgSrc(semImagem)} />
             </div>
 
-            <div className={styles.thumbnailRow}>
-              {product.imagens?.map((imagem) => (
-                <button
-                  key={imagem.id}
-                  type="button"
-                  className={`${styles.thumbnailButton} ${activeImage === getImageUrl(imagem.url) ? styles.active : ''}`}
-                  onClick={() => {
-                    const imgUrl = getImageUrl(imagem.url);
-                    setActiveImage(imgUrl);
-                    setMainImgSrc(imgUrl);
-                  }}
-                >
-                  <img src={getImageUrl(imagem.url)} alt={product.nome} />
-                </button>
-              ))}
+            <div className={styles.thumbnailList}>
+              {product.imagens?.map((imagem) => {
+                const imgUrl = getImageUrl(imagem.url);
+                return (
+                  <button
+                    key={imagem.id}
+                    type="button"
+                    className={`${styles.thumbnailButton} ${activeImage === imgUrl ? styles.active : ''}`}
+                    onClick={() => {
+                      setActiveImage(imgUrl);
+                      setMainImgSrc(imgUrl);
+                    }}
+                  >
+                    <img src={imgUrl} alt={`Miniatura de ${product.nome}`} />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className={styles.detailsColumn}>
-            <span className={styles.productCategory}>{product.categoria?.nome}</span>
+          <aside className={styles.summaryCard}>
+            <div className={styles.topMeta}>
+              <span className={styles.productCategory}>{product.categoria?.nome}</span>
+              <span className={styles.skuLabel}>SKU {product.id}</span>
+            </div>
+
             <h1>{product.nome}</h1>
-            <p className={styles.productPrice}>R$ {product.preco_venda?.toFixed(2)}</p>
-            <p className={styles.productDescription}>{product.descricao}</p>
-            <button className={styles.addToCartBtn} onClick={() => addToCart(product)}>
-              Adicionar ao carrinho
-            </button>
-            <ProductDetailsCard product={product} />
+
+            <div className={styles.priceBlock}>
+              <p className={styles.productPrice}>R$ {productPrice}</p>
+              <span className={`${styles.stockPill} ${Number(product.estoque_atual) > 0 ? styles.stockIn : styles.stockOut}`}>
+                {product.estoque_atual > 0 ? `${product.estoque_atual} em estoque` : 'Fora de estoque'}
+              </span>
+            </div>
+
+            <p className={styles.shortDescription}>{product.descricao}</p>
+
+            <div className={styles.productFacts}>
+              <div className={styles.factItem}>
+                <span>Categoria</span>
+                <strong>{product.categoria?.nome || '—'}</strong>
+              </div>
+              <div className={styles.factItem}>
+                <span>Disponibilidade</span>
+                <strong>{product.estoque_atual > 0 ? 'Pronto para envio' : 'Sem estoque'}</strong>
+              </div>
+              {product.peso && (
+                <div className={styles.factItem}>
+                  <span>Peso</span>
+                  <strong>{product.peso} kg</strong>
+                </div>
+              )}
+            </div>
+
+            {product.variacoes?.length > 0 && (
+              <div className={styles.variationBlock}>
+                <span className={styles.variationLabel}>Variações</span>
+                <div className={styles.variationOptions}>
+                  {product.variacoes.map((variation) => (
+                    <button key={variation} type="button" className={styles.variationOption}>
+                      {variation}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className={styles.actionGroup}>
+              <button className={`${styles.btn} ${styles.primaryButton}`} onClick={() => addToCart(product)}>
+                Adicionar ao carrinho
+              </button>
+              <Link
+                to="/carrinho"
+                className={`${styles.btn} ${styles.secondaryButton}`}
+                onClick={() => addToCart(product)}
+              >
+                Comprar agora
+              </Link>
+            </div>
+
+            <div className={styles.badgeGroup}>
+              <span className={styles.badge}>Frete rápido</span>
+              <span className={styles.badge}>Garantia de qualidade</span>
+            </div>
+          </aside>
+        </section>
+
+        <section className={styles.productDetailsSection}>
+          <div className={styles.descriptionSection}>
+            <h2>Descrição do produto</h2>
+            <p>{product.descricao}</p>
           </div>
+          <aside className={styles.detailsSidebar}>
+            <ProductDetailsCard product={product} />
+          </aside>
         </section>
 
         <RelatedProducts products={relatedProducts} />

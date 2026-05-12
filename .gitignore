@@ -8,6 +8,10 @@ yarn.lock
 .env.local
 .env.*.local
 
+# Backend-specific env and uploads
+backend/.env
+backend/uploads/
+
 # IDE
 .vscode/
 .idea/

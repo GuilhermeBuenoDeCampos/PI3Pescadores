@@ -1,5 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { fetchCategories, fetchProducts, fetchProductById, getImageUrl } from '../services/api';
+import { useState, useEffect } from 'react';
+import {
+  BACKEND_URL,
+  fetchCategories,
+  fetchProducts,
+  fetchProductById,
+  getImageUrl,
+  updateProductStatus,
+} from '../services/api';
+import logo from '../assets/logo/logo.png';
 import styles from './StockManagement.module.css';
 
 const StockManagement = () => {
@@ -13,18 +21,21 @@ const StockManagement = () => {
   const [editProduct, setEditProduct] = useState(null);
   // Single launch
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState(null);
   const [launchQuantity, setLaunchQuantity] = useState(0);
   const [singleSuggestions, setSingleSuggestions] = useState([]);
   const [singleSelectedProduct, setSingleSelectedProduct] = useState(null);
   const [singleActiveIndex, setSingleActiveIndex] = useState(-1);
   // Mass launch
   const [massItems, setMassItems] = useState([]); // { id_produto, quantidade }
-  const [massSearchTerm, setMassSearchTerm] = useState('');
-  const [massSuggestions, setMassSuggestions] = useState([]);
-  const [massSelectedProduct, setMassSelectedProduct] = useState(null);
-  const [massQtyInput, setMassQtyInput] = useState('');
-  const [massActiveIndex, setMassActiveIndex] = useState(-1);
+  // Settings
+  const [autoDisableZeroStock, setAutoDisableZeroStock] = useState(() => {
+    try {
+      const saved = localStorage.getItem('autoDisableZeroStock');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
 
   const loadData = async () => {
     try {
@@ -43,6 +54,26 @@ const StockManagement = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Auto-desativar produtos com estoque zero
+  useEffect(() => {
+    const autoDisableProducts = async () => {
+      if (!autoDisableZeroStock || !Array.isArray(products)) return;
+
+      for (const product of products) {
+        // Se o produto tem estoque zero e está ativo, desativar
+        if (product.estoque_atual === 0 && product.ativo !== false) {
+          try {
+            await updateProductStatus(product.id, false);
+          } catch (err) {
+            console.error(`Erro ao desativar produto ${product.id}:`, err);
+          }
+        }
+      }
+    };
+
+    autoDisableProducts();
+  }, [autoDisableZeroStock, products]);
 
   const closeModal = () => {
     setActiveModal(null);
@@ -99,20 +130,22 @@ const StockManagement = () => {
     // Acrescentar as imagens arrastadas/adicionadas
     // O backend multer recebe o arquivo no campo 'imagens'
     formData.delete('imagens'); // Remove caso já exista algo no form nativamente
-    selectedImages.forEach(img => {
-      formData.append('imagens', img.file);
-    });
+    selectedImages
+      .filter((img) => img.file instanceof File)
+      .forEach((img) => {
+        formData.append('imagens', img.file);
+      });
 
     try {
       let response;
       if (editProduct && editProduct.id) {
         // use POST to update when sending multipart FormData from the browser
-        response = await fetch(`http://localhost:3000/api/produtos/${editProduct.id}`, {
+        response = await fetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
           method: 'POST',
           body: formData,
         });
       } else {
-        response = await fetch('http://localhost:3000/api/produtos', {
+        response = await fetch(`${BACKEND_URL}/api/produtos`, {
           method: 'POST',
           body: formData,
         });
@@ -147,7 +180,7 @@ const StockManagement = () => {
     if (!newCategoryName.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/categorias', {
+      const response = await fetch(`${BACKEND_URL}/api/categorias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: newCategoryName })
@@ -161,35 +194,6 @@ const StockManagement = () => {
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar categoria!');
-    }
-  };
-
-  // Single product launch
-  const handleSingleLaunch = async (e) => {
-    e.preventDefault();
-    if (!selectedProductId || !Number.isInteger(Number(launchQuantity)) || Number(launchQuantity) <= 0) {
-      alert('Selecione um produto válido e informe uma quantidade maior que zero.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3000/api/produtos/${selectedProductId}/movimentacoes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo: 'entrada', motivo: 'compra', quantidade: Number(launchQuantity) }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err && err.error ? err.error.message : 'Falha ao lançar produto');
-      }
-
-      alert('Lançamento realizado com sucesso');
-      closeModal();
-      loadData();
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao lançar produto: ' + err.message);
     }
   };
 
@@ -209,7 +213,6 @@ const StockManagement = () => {
 
   const selectSingleSuggestion = (product) => {
     setSingleSelectedProduct(product);
-    setSelectedProductId(product.id);
     setSearchTerm(product.nome);
     setSingleSuggestions([]);
     setSingleActiveIndex(-1);
@@ -247,48 +250,29 @@ const StockManagement = () => {
       return [...prev, { id_produto: pid, quantidade: q, nome: productObj.nome }];
     });
     // reset inputs
-    setMassSearchTerm('');
-    setMassSuggestions([]);
-    setMassSelectedProduct(null);
-    setMassQtyInput('');
+    setSearchTerm('');
+    setSingleSuggestions([]);
+    setSingleSelectedProduct(null);
+    setLaunchQuantity('');
   };
 
-  const handleMassSearchChange = (value) => {
-    setMassSearchTerm(value);
-    if (!value) {
-      setMassSuggestions([]);
-      return;
+  const handleToggleActive = async (productId, currentStatus) => {
+    try {
+      await updateProductStatus(productId, !currentStatus);
+      loadData();
+    } catch (err) {
+      console.error('Erro ao atualizar status do produto:', err);
+      alert('Erro ao atualizar status: ' + (err.message || ''));
     }
-    const q = value.toLowerCase();
-    const suggestions = products
-      .filter(p => p.nome && p.nome.toLowerCase().includes(q))
-      .slice(0, 8)
-      .map(p => ({ id: p.id, nome: p.nome }));
-    setMassSuggestions(suggestions);
   };
 
-  const selectMassSuggestion = (product) => {
-    setMassSelectedProduct(product);
-    setMassSearchTerm(product.nome);
-    setMassSuggestions([]);
-    setMassActiveIndex(-1);
-  };
-
-  const handleMassKeyDown = (e) => {
-    if (!massSuggestions || massSuggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setMassActiveIndex((i) => Math.min(i + 1, massSuggestions.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setMassActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const sel = massSuggestions[massActiveIndex >= 0 ? massActiveIndex : 0];
-      if (sel) selectMassSuggestion(sel);
-    } else if (e.key === 'Escape') {
-      setMassSuggestions([]);
-      setMassActiveIndex(-1);
+  const handleToggleAutoDisableZeroStock = () => {
+    const newValue = !autoDisableZeroStock;
+    setAutoDisableZeroStock(newValue);
+    try {
+      localStorage.setItem('autoDisableZeroStock', JSON.stringify(newValue));
+    } catch (err) {
+      console.error('Erro ao salvar configuração local:', err);
     }
   };
 
@@ -308,7 +292,7 @@ const StockManagement = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/produtos/movimentacoes/massa', {
+      const response = await fetch(`${BACKEND_URL}/api/produtos/movimentacoes/massa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movimentacoes: massItems.map(item => ({ id_produto: item.id_produto, tipo: 'entrada', quantidade: Number(item.quantidade), motivo: 'compra' })) }),
@@ -334,7 +318,7 @@ const StockManagement = () => {
       <div className={styles.contentWrapper}>
         {/* Header */}
         <header className={styles.header}>
-          <img src="/src/assets/logo/logo.png" alt="Tres Pescadores Store Logo" className={styles.logo} onError={(e) => { e.target.src = 'https://via.placeholder.com/40'; }} />
+          <img src={logo} alt="Tres Pescadores Store Logo" className={styles.logo} />
           <div className={styles.titleContainer}>
             <h1>Tres Pescadores Store</h1>
             <div className={styles.subtitle}>Gerenciar Estoque</div>
@@ -343,8 +327,7 @@ const StockManagement = () => {
 
         {/* Main Content */}
         <div className={styles.content}>
-          <h2>Painel do Fornecedor</h2>
-          <p className={styles.subtitle}>Gerencie seu catálogo de produtos e estoques de forma eficiente</p>
+
 
           {/* Actions Bar */}
           <div className={styles.actionsBar}>
@@ -352,7 +335,8 @@ const StockManagement = () => {
             <button className={`${styles.btn} ${styles.btnBlue}`} onClick={() => { setEditProduct(null); setSelectedImages([]); setActiveModal('novo-produto'); }}>+ Novo Produto</button>
             <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('categorias')}>📋 Categorias</button>
             {/* botão 'Lançar Produtos' removido */}
-            <button className={`${styles.btn} ${styles.btnYellow}`} onClick={() => setActiveModal('lancamento-massa')}>&equiv; Lançamento em Massa</button>
+            <button className={`${styles.btn} ${styles.btnYellow}`} onClick={() => setActiveModal('lancamento-massa')}>&equiv; Lançar Produto</button>
+            <button className={`${styles.btn} ${styles.btnLight}`} onClick={() => setActiveModal('configuracoes')}>⚙️ Configurações</button>
           </div>
 
           {/* Dashboards */}
@@ -392,6 +376,7 @@ const StockManagement = () => {
                 <th>SKU</th>
                 <th>Unidade</th>
                 <th>Quantidade</th>
+                <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -406,6 +391,17 @@ const StockManagement = () => {
                   <td>{product.id}</td>
                   <td>un</td>
                   <td>{product.estoque_atual || 0}</td>
+                  <td>
+                    <label className={styles.toggleSwitch}>
+                      <input 
+                        type="checkbox" 
+                        checked={product.ativo} 
+                        onChange={() => handleToggleActive(product.id, product.ativo)}
+                        className={styles.toggleCheckbox}
+                      />
+                      <span className={styles.toggleSlider}></span>
+                    </label>
+                  </td>
                   <td>
                     <button className={`${styles.btn} ${styles.btnLight}`} style={{padding:'4px 8px', fontSize:'12px'}} onClick={async () => {
                       // open modal in edit mode, fetch full product data (including images)
@@ -426,7 +422,7 @@ const StockManagement = () => {
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
                     Nenhum produto encontrado.
                   </td>
                 </tr>
@@ -810,6 +806,65 @@ const StockManagement = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button type="button" className={`${styles.btn} ${styles.btnLight}`} onClick={closeModal}>Fechar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Configurações Modal */}
+      {activeModal === 'configuracoes' && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={`${styles.modalSidebar} ${styles.sidebarBlue}`}>
+              <h3>Configurações</h3>
+              <ul>
+                <li>Customize as preferências do seu gerenciador de estoque.</li>
+                <li>Ative automações para ganhar tempo.</li>
+                <li>Mantenha seu inventário organizado e eficiente.</li>
+              </ul>
+            </div>
+            <div className={styles.modalBody}>
+              <button className={styles.closeButton} onClick={closeModal}>&times;</button>
+              <div className={styles.modalHeader}>
+                <h2>Configurações do Sistema</h2>
+                <p>Personalize o comportamento do seu gerenciador de estoque.</p>
+              </div>
+
+              <div style={{ marginBottom: '25px' }}>
+                <h4 style={{ color: '#0f172a', marginBottom: '15px' }}>AUTOMAÇÕES</h4>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '15px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '1px solid #e1e7ec'
+                }}>
+                  <div>
+                    <label style={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
+                      Auto-desativar com Estoque Zero
+                    </label>
+                    <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
+                      Desativa automaticamente produtos quando o estoque chega a zero.
+                    </p>
+                  </div>
+                  <div className={styles.toggleSwitch} onClick={handleToggleAutoDisableZeroStock}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.toggleCheckbox}
+                      checked={autoDisableZeroStock}
+                      readOnly
+                    />
+                    <span className={styles.toggleSlider}></span>
+                  </div>
                 </div>
               </div>
 

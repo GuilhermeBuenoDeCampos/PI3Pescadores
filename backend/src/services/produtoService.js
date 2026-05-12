@@ -4,6 +4,20 @@ const AppError = require('../middlewares/appError');
 const ALLOWED_MOVEMENT_TYPES = new Set(['entrada', 'saida']);
 const ALLOWED_MOVEMENT_REASONS = new Set(['compra', 'venda', 'ajuste']);
 
+// Utility function to generate slug from product name for URL-friendly routing
+function generateSlug(nome) {
+  if (!nome || typeof nome !== 'string') return '';
+  
+  return nome
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')                          // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, '')           // Remove accent marks
+    .replace(/[^a-z0-9\s-]/g, '')              // Remove non-alphanumeric except spaces/hyphens
+    .replace(/[\s_-]+/g, '-')                  // Replace spaces/underscores with hyphens
+    .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
+}
+
 function toNumberOrNull(value) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -66,6 +80,7 @@ function toProdutoPayload(produto) {
   return {
     id: plain.id,
     nome: plain.nome,
+    slug: generateSlug(plain.nome),
     descricao: plain.descricao,
     preco_custo: formatarCampoNumerico(plain.preco_custo, 2),
     preco_venda: formatarCampoNumerico(plain.preco_venda, 2),
@@ -81,11 +96,30 @@ function toProdutoPayload(produto) {
           nome: plain.categoria.nome,
         }
       : null,
-    imagens: imagens.map((imagem) => ({
-      id: imagem.id,
-      url: imagem.url,
-      criado_em: imagem.criado_em,
-    })),
+    imagens: imagens.map((imagem) => {
+      // Normalize image URL: trim and remove any internal whitespace/newlines
+      const rawUrl = imagem.url || '';
+      let sanitized = String(rawUrl).trim().replace(/\s+/g, '');
+
+      // If it's a Supabase signed URL, convert to the public object URL and remove query params
+      // Example signed: https://<project>.supabase.co/storage/v1/object/sign/<bucket>/<path>?token=...
+      // Public URL:   https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
+      try {
+        const signMarker = '/storage/v1/object/sign/';
+        const publicMarker = '/storage/v1/object/public/';
+        if (sanitized.includes(signMarker)) {
+          const parts = sanitized.split('?')[0]; // drop token
+          sanitized = parts.replace(signMarker, publicMarker);
+        }
+      } catch (e) {
+        // if anything goes wrong, fall back to the sanitized value
+      }
+      return {
+        id: imagem.id,
+        url: sanitized,
+        criado_em: imagem.criado_em,
+      };
+    }),
     movimentacoes_estoque: movimentacoes.map((movimentacao) => ({
       id: movimentacao.id,
       tipo: movimentacao.tipo,
@@ -186,6 +220,48 @@ exports.listarProdutos = async (query) => {
 
 exports.buscarProdutoPorId = async (id) => {
   const produto = await buscarProdutoModelPorId(id);
+  return toProdutoPayload(produto);
+};
+
+exports.buscarProdutoPorNome = async (nome) => {
+  // Create slug from the provided name to match against product names
+  const slug = generateSlug(nome);
+  
+  if (!slug) {
+    throw new AppError(400, 'Invalid product name');
+  }
+
+  // Fetch all products and find the one matching the slug
+  // (could be optimized with a database search if product names are indexed)
+  const produtos = await db.Produto.findAll({
+    include: [
+      {
+        model: db.Categoria,
+        as: 'categoria',
+        attributes: ['id', 'nome'],
+      },
+      {
+        model: db.ProdutoImagem,
+        as: 'imagens',
+        attributes: ['id', 'url', 'criado_em'],
+      },
+      {
+        model: db.EstoqueMovimentacao,
+        as: 'movimentacoesEstoque',
+        attributes: ['id', 'tipo', 'quantidade', 'motivo', 'created_at'],
+      },
+    ],
+  });
+
+  const produto = produtos.find(p => {
+    const productSlug = generateSlug(p.nome);
+    return productSlug === slug;
+  });
+
+  if (!produto) {
+    throw new AppError(404, 'Produto não encontrado');
+  }
+
   return toProdutoPayload(produto);
 };
 
@@ -417,17 +493,7 @@ exports.registrarMovimentacao = async (idProduto, payload) => {
 };
 
 exports.registrarMovimentacoesEmMassa = async (payload) => {
-  // Normalize payload: accept either { movimentacoes: [...] } or an array directly
   const received = payload;
-  // helpful debug log when unexpected payloads arrive
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      console.warn('registrarMovimentacoesEmMassa received payload:', JSON.stringify(received));
-    } catch (e) {
-      console.warn('registrarMovimentacoesEmMassa received payload (non-serializable)');
-    }
-  }
-
   const movimentacoesInput = Array.isArray(received)
     ? received
     : (received && Array.isArray(received.movimentacoes) ? received.movimentacoes : null);

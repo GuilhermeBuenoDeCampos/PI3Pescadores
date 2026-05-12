@@ -8,7 +8,7 @@ import SectionTitle from '../components/SectionTitle';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
 import { fetchProducts, fetchCategories } from '../services/api';
-import { filterProducts, sortProductsByPrice } from '../utils/productUtils';
+import { sortProductsByPrice } from '../utils/productUtils';
 import styles from './Home.module.css';
 
 function Home() {
@@ -48,36 +48,54 @@ function Home() {
     loadData();
   }, []);
 
+  const normalizeCategory = (value) =>
+    value
+      ?.toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim() || '';
+
   const filteredProducts = useMemo(
     () => {
       if (!products.length) return [];
-      
+
       let filtered = products;
-      
+
+      // Filtro por status ativo
+      filtered = filtered.filter(p => p.ativo !== false);
+
       // Filtro por categoria
-      if (activeCategory !== 'Todos') {
-        filtered = filtered.filter(p => p.categoria?.nome === activeCategory);
+      const activeCategoryNormalized = normalizeCategory(activeCategory);
+      if (activeCategoryNormalized !== 'todos') {
+        filtered = filtered.filter(
+          (p) => normalizeCategory(p.categoria?.nome) === activeCategoryNormalized
+        );
       }
-      
+
       // Filtro por busca
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        filtered = filtered.filter(p =>
-          p.nome.toLowerCase().includes(query) ||
-          p.descricao?.toLowerCase().includes(query)
+        filtered = filtered.filter(
+          (p) =>
+            p.nome.toLowerCase().includes(query) ||
+            p.descricao?.toLowerCase().includes(query)
         );
       }
-      
+
       // Filtro por preço
-      filtered = filtered.filter(p => p.preco_venda >= minPrice && p.preco_venda <= maxPrice);
-      
+      filtered = filtered.filter((p) => {
+        const price = Number(p.preco_venda ?? 0);
+        return price >= Number(minPrice) && price <= Number(maxPrice);
+      });
+
       // Ordenação por preço
       if (sortOrder === 'asc') {
         filtered = sortProductsByPrice(filtered, true);
       } else if (sortOrder === 'desc') {
         filtered = sortProductsByPrice(filtered, false);
       }
-      
+
       return filtered;
     },
     [products, activeCategory, searchQuery, minPrice, maxPrice, sortOrder]
@@ -87,7 +105,9 @@ function Home() {
   const totalProducts = products.length;
 
   const getCategoryCount = (category) =>
-    products.filter((product) => product.categoria?.nome === category).length;
+    products.filter(
+      (product) => normalizeCategory(product.categoria?.nome) === normalizeCategory(category)
+    ).length;
 
   function handleSearchSubmit(event) {
     event.preventDefault();

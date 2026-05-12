@@ -12,9 +12,18 @@
 
 // URL base do backend - Configurável via variáveis de ambiente
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 const API_URL = `${BACKEND_URL}/api`;
+
+async function parseApiError(response, fallbackMessage) {
+  try {
+    const body = await response.json();
+    return body?.error?.message || body?.message || fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
 
 /**
  * Constrói URL completa para imagens
@@ -33,7 +42,9 @@ const API_URL = `${BACKEND_URL}/api`;
 export function getImageUrl(url) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${BACKEND_URL}${url}`;
+  // ensure we don't accidentally join without a slash: handle 'uploads/img.jpg' and '/uploads/img.jpg'
+  const normalized = url.startsWith('/') ? url : `/${url}`;
+  return `${BACKEND_URL}${normalized}`;
 }
 
 
@@ -61,7 +72,7 @@ export async function fetchProducts(filters = {}) {
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch products: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch products: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -80,7 +91,25 @@ export async function fetchProductById(id) {
   const response = await fetch(`${API_URL}/produtos/${id}`);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch product: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch product: ${response.statusText}`));
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+/**
+ * Busca um produto específico pelo nome (slug)
+ * 
+ * @param {string} nome - Nome/slug do produto
+ * @returns {Promise<Object>} Dados do produto
+ * @throws {Error} Se falhar requisição ou produto não encontrado
+ */
+export async function fetchProductByName(nome) {
+  const response = await fetch(`${API_URL}/produtos/nome/${encodeURIComponent(nome)}`);
+  
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, `Produto não encontrado: ${response.statusText}`));
   }
 
   const result = await response.json();
@@ -98,9 +127,32 @@ export async function fetchCategories() {
   const response = await fetch(`${API_URL}/categorias`);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch categories: ${response.statusText}`);
+    throw new Error(await parseApiError(response, `Failed to fetch categories: ${response.statusText}`));
   }
 
   const result = await response.json();
   return result.data || [];
+}
+
+/**
+ * Atualiza o status ativo de um produto
+ * 
+ * @param {string|number} id - ID do produto
+ * @param {boolean} ativo - Novo valor para ativo
+ * @returns {Promise<Object>} Dados do produto atualizado
+ * @throws {Error} Se falhar requisição
+ */
+export async function updateProductStatus(id, ativo) {
+  const response = await fetch(`${API_URL}/produtos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ativo })
+  });
+  
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, `Failed to update product status: ${response.statusText}`));
+  }
+
+  const result = await response.json();
+  return result.data;
 }
