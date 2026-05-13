@@ -254,17 +254,14 @@ function Home() {
           <h2>Atendimento com respeito à sua devoção</h2>
           <div className={styles.testimonialsGrid}>
             <article className={styles.testimonialCard}>
-              <strong>★★★★★</strong>
               <p>Curadoria focada em artigos religiosos católicos para diferentes momentos de fé.</p>
               <span>Tres Pescadores Store</span>
             </article>
             <article className={styles.testimonialCard}>
-              <strong>★★★★★</strong>
               <p>Produtos apresentados com imagens, categorias e preços reais do catálogo.</p>
               <span>Catálogo atualizado</span>
             </article>
             <article className={styles.testimonialCard}>
-              <strong>★★★★★</strong>
               <p>Navegação com busca, filtros por categoria e ordenação por preço preservados.</p>
               <span>Experiência de compra</span>
             </article>
