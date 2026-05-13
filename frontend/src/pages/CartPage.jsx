@@ -5,12 +5,6 @@ import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
 import './cart.css';
 
-const RECOMMENDED = [
-  { id: 101, nome: 'Terço de Cristal Premium', preco_venda: 65.00, categoria: { nome: 'Terços' } },
-  { id: 102, nome: 'Imagem de São Bento', preco_venda: 45.50, categoria: { nome: 'Imagens Religiosas' } },
-  { id: 103, nome: 'Porta Terço de Couro', preco_venda: 29.90, categoria: { nome: 'Acessórios' } }
-];
-
 function CartPage() {
   const { cart, removeFromCart, clearCart, addToCart, decreaseQuantity } = useCart();
   const [couponCode, setCouponCode] = useState('');
@@ -111,17 +105,6 @@ function CartPage() {
           </div>
         </div>
       </main>
-
-      <section className="maybe-interest">
-        <div className="maybe-section-inner">
-          <h3 className="maybe-title">Produtos que talvez te interessem</h3>
-          <div className="maybe-grid">
-            {RECOMMENDED.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
