@@ -110,3 +110,33 @@ exports.getHistoricoAuditoria = asyncHandler(async (req, res) => {
     },
   });
 });
+
+// Get KPI accuracy history
+exports.getKpiAcuracidade = asyncHandler(async (req, res) => {
+  const { dataInicio, dataFim } = req.query;
+  const where = {};
+  
+  if (dataInicio || dataFim) {
+    where.created_at = {};
+    if (dataInicio) where.created_at[db.Sequelize.Op.gte] = new Date(dataInicio);
+    if (dataFim) {
+      const dataFimAjustada = new Date(dataFim);
+      dataFimAjustada.setHours(23, 59, 59, 999);
+      where.created_at[db.Sequelize.Op.lte] = dataFimAjustada;
+    }
+  }
+
+  const kpiData = await db.AuditoriaProduto.findAll({
+    where,
+    attributes: [
+      [db.sequelize.fn('date_trunc', 'day', db.sequelize.col('created_at')), 'data'],
+      [db.sequelize.fn('avg', db.sequelize.col('acuracidade')), 'media_acuracidade']
+    ],
+    group: [db.sequelize.fn('date_trunc', 'day', db.sequelize.col('created_at'))],
+    order: [[db.sequelize.fn('date_trunc', 'day', db.sequelize.col('created_at')), 'ASC']],
+  });
+  
+  res.json({
+    data: kpiData
+  });
+});

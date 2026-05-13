@@ -12,4 +12,7 @@ router.post('/salvar', auditoriaController.salvarAuditoria);
 // Get audit history
 router.get('/historico', auditoriaController.getHistoricoAuditoria);
 
+// Get KPI accuracy history
+router.get('/kpi/acuracidade', auditoriaController.getKpiAcuracidade);
+
 module.exports = router;

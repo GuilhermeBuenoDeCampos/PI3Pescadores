@@ -12,7 +12,7 @@
 
 // URL base do backend - Configurável via variáveis de ambiente
 export const BACKEND_URL =
-  (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  (import.meta.env.VITE_BACKEND_URL || 'https://pi3pescadores.onrender.com').replace(/\/+$/, '');
 
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -214,3 +214,17 @@ export async function updateProductStatus(id, ativo) {
   const result = await response.json();
   return result.data;
 }
+  
+export async function fetchKpiAcuracidade(dataInicio, dataFim) {  
+  const params = new URLSearchParams();  
+  if (dataInicio) params.append('dataInicio', dataInicio);  
+  if (dataFim) params.append('dataFim', dataFim);  
+  const queryString = params.toString();  
+  const url = queryString ? API_URL + '/auditoria/kpi/acuracidade?' + queryString : API_URL + '/auditoria/kpi/acuracidade';  
+  const response = await fetch(url);  
+  if (!response.ok) {  
+    throw new Error('Failed to fetch KPI accuracy: ' + response.statusText);  
+  }  
+  const result = await response.json();  
+  return result.data;  
+} 

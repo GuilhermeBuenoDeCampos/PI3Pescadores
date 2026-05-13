@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import ProductPage from './pages/ProductPage';
 import StockManagement from './pages/StockManagement';
 import CartPage from './pages/CartPage';
+import AdminDashboard from './pages/AdminDashboard';
 import styles from './App.module.css';
 
 // App component defines the two main application pages.
@@ -16,6 +17,7 @@ function App() {
         <Route path="/produto-nome/:nome" element={<ProductPage />} />
         <Route path="/estoque" element={<StockManagement />} />
         <Route path="/carrinho" element={<CartPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </div>
   );
