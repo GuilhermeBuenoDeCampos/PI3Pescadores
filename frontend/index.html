@@ -7,6 +7,24 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Load runtime config (config.json) from server root before booting the app.
+      (function(){
+        function safeParseJson(text){ try{ return JSON.parse(text); }catch(e){ return {}; } }
+        fetch('/config.json').then(function(res){
+          if(res.ok){ return res.text(); }
+          return '{}';
+        }).then(function(txt){
+          window.APP_CONFIG = safeParseJson(txt || '{}');
+        }).catch(function(){ window.APP_CONFIG = {}; })
+        .finally(function(){
+          // Dynamically import the main module after config is set
+          var s = document.createElement('script');
+          s.type = 'module';
+          s.src = '/src/main.jsx';
+          document.body.appendChild(s);
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -11,220 +11,140 @@
  */
 
 // URL base do backend - Configurável via variáveis de ambiente
+<<<<<<< HEAD
 export const BACKEND_URL =
   (import.meta.env.VITE_BACKEND_URL || 'https://pi3pescadores.onrender.com').replace(/\/+$/, '');
+=======
+// Determine BACKEND_URL like this:
+// - If `VITE_BACKEND_URL` is set, use it (useful for production pointing to an external API).
+// - If in dev mode (vite), default to localhost:3000 for local development convenience.
+// - Otherwise (production and no VITE_BACKEND_URL), use a relative path so the app calls '/api' on same origin.
+// Prefer runtime config (window.APP_CONFIG) when available so the backend URL can be changed
+// without rebuilding the frontend. Falls back to Vite env or localhost in dev.
+const runtimeBackend = (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.VITE_BACKEND_URL)
+  ? window.APP_CONFIG.VITE_BACKEND_URL
+  : undefined;
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
 
-const API_URL = `${BACKEND_URL}/api`;
+export const BACKEND_URL = runtimeBackend ?? import.meta.env.VITE_BACKEND_URL ?? (import.meta.env.DEV ? 'http://localhost:3000' : '');
 
-async function parseApiError(response, fallbackMessage) {
-  try {
-    const body = await response.json();
-    return body?.error?.message || body?.message || fallbackMessage;
-  } catch {
-    return fallbackMessage;
-  }
-}
+export const API_URL = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
-/**
- * Constrói URL completa para imagens
- * Lida com três casos:
- * 1. URL vazia/null → retorna vazio
- * 2. URL completa (http/https) → retorna como está
- * 3. Caminho relativo → prepende BACKEND_URL
- * 
- * Exemplo:
- * getImageUrl('/uploads/Banner/imagem.jpg') 
- * → 'http://localhost:3000/uploads/Banner/imagem.jpg'
- * 
- * @param {string} url - URL ou caminho da imagem
- * @returns {string} URL completa da imagem
- */
-export function getImageUrl(url) {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  // ensure we don't accidentally join without a slash: handle 'uploads/img.jpg' and '/uploads/img.jpg'
-  const normalized = url.startsWith('/') ? url : `/${url}`;
-  return `${BACKEND_URL}${normalized}`;
-}
+// Helper: ensure response is JSON before parsing
+async function parseJsonSafe(response){
+  /* Central API utilities */
 
+  // Prefer runtime config when available (deployed SPA can update config.json)
+  const runtimeBackend = (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.VITE_BACKEND_URL)
+    ? String(window.APP_CONFIG.VITE_BACKEND_URL).replace(/\/+$/, '')
+    : undefined;
 
-/**
- * Busca produtos com filtros opcionais
- * 
- * @param {Object} filters - Filtros (category, active, etc)
- * @returns {Promise<Array>} Lista de produtos
- * @throws {Error} Se falhar requisição
- */
-export async function fetchProducts(filters = {}) {
-  const params = new URLSearchParams();
-  
-  if (filters.category) {
-    params.append('id_categoria', filters.category);
-  }
-  
-  if (filters.active !== undefined) {
-    params.append('ativo', filters.active);
+  export const BACKEND_URL = runtimeBackend ?? (import.meta.env.VITE_BACKEND_URL ? String(import.meta.env.VITE_BACKEND_URL).replace(/\/+$/, '') : (import.meta.env.DEV ? 'http://localhost:3000' : ''));
+  export const API_URL = BACKEND_URL ? `${BACKEND_URL.replace(/\/+$/, '')}/api` : '/api';
+
+  async function parseJsonSafe(response) {
+    const ct = response.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const text = await response.text().catch(() => '');
+      const snippet = String(text).slice(0, 200);
+      throw new Error(`API returned non-JSON (status ${response.status}): ${snippet}`);
+    }
+    return response.json();
   }
 
-  const queryString = params.toString();
-  const url = queryString ? `${API_URL}/produtos?${queryString}` : `${API_URL}/produtos`;
-
-  const response = await fetch(url);
-  
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, `Failed to fetch products: ${response.statusText}`));
+  async function parseApiError(response, fallbackMessage) {
+    try {
+      const body = await response.json();
+      return body?.error?.message || body?.message || fallbackMessage;
+    } catch {
+      return fallbackMessage;
+    }
   }
 
-  const result = await response.json();
-  return result.data || [];
-}
-
-
-/**
- * Busca um produto específico por ID
- * 
- * @param {string|number} id - ID do produto
- * @returns {Promise<Object>} Dados do produto
- * @throws {Error} Se falhar requisição
- */
-export async function fetchProductById(id) {
-  const response = await fetch(`${API_URL}/produtos/${id}`);
-  
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, `Failed to fetch product: ${response.statusText}`));
+  export function getImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const normalized = url.startsWith('/') ? url : `/${url}`;
+    return `${BACKEND_URL}${normalized}`;
   }
 
-  const result = await response.json();
-  return result.data;
-}
-
-/**
- * Busca um produto específico pelo nome (slug)
- * 
- * @param {string} nome - Nome/slug do produto
- * @returns {Promise<Object>} Dados do produto
- * @throws {Error} Se falhar requisição ou produto não encontrado
- */
-export async function fetchProductByName(nome) {
-  const response = await fetch(`${API_URL}/produtos/nome/${encodeURIComponent(nome)}`);
-  
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, `Produto não encontrado: ${response.statusText}`));
+  export async function fetchProducts(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.category) params.append('id_categoria', filters.category);
+    if (filters.active !== undefined) params.append('ativo', filters.active);
+    const qs = params.toString();
+    const url = qs ? `${API_URL}/produtos?${qs}` : `${API_URL}/produtos`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch products: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data || [];
   }
 
-  const result = await response.json();
-  return result.data;
-}
+  export async function fetchProductById(id) {
+    const res = await fetch(`${API_URL}/produtos/${id}`);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch product: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
 
-/**
- * Busca 5 produtos aleatórios para auditoria
- * 
- * @returns {Promise<Array>} Lista de 5 produtos aleatórios
- * @throws {Error} Se falhar requisição
- */
+  export async function fetchProductByName(nome) {
+    const res = await fetch(`${API_URL}/produtos/nome/${encodeURIComponent(nome)}`);
+    if (!res.ok) throw new Error(await parseApiError(res, `Produto não encontrado: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
+
+  export async function fetchProdutosAleatorios() {
+    const res = await fetch(`${API_URL}/auditoria/aleatorios`);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch random products: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
+
+  export async function salvarAuditoria(auditorias) {
+    const res = await fetch(`${API_URL}/auditoria/salvar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auditorias }),
+    });
+    if (!res.ok) throw new Error(await parseApiError(res, 'Failed to save audit'));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
+
+  export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
+    const res = await fetch(`${API_URL}/auditoria/historico?page=${page}&limit=${limit}`);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch audit history: ${res.statusText}`));
+    return parseJsonSafe(res);
+  }
+
+  export async function fetchCategories() {
+    const res = await fetch(`${API_URL}/categorias`);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch categories: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data || [];
+  }
+
+  export async function updateProductStatus(id, ativo) {
+    const res = await fetch(`${API_URL}/produtos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ativo }),
+    });
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to update product status: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
+
+  export async function fetchKpiAcuracidade(dataInicio, dataFim) {
+    const params = new URLSearchParams();
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+    const qs = params.toString();
+    const url = qs ? `${API_URL}/auditoria/kpi/acuracidade?${qs}` : `${API_URL}/auditoria/kpi/acuracidade`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(await parseApiError(res, `Failed to fetch KPI accuracy: ${res.statusText}`));
+    const json = await parseJsonSafe(res);
+    return json.data;
+  }
 export async function fetchProdutosAleatorios() {
-  const response = await fetch(`${API_URL}/auditoria/aleatorios`);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch random products: ${response.statusText}`);
-  }
-
-  const result = await response.json();
-  return result.data;
-}
-
-/**
- * Salva registros de auditoria de estoque
- * 
- * @param {Array} auditorias - Array com dados de auditoria
- * @returns {Promise<Object>} Resultado da operação
- * @throws {Error} Se falhar requisição
- */
-export async function salvarAuditoria(auditorias) {
-  const response = await fetch(`${API_URL}/auditoria/salvar`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auditorias })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to save audit: ${response.statusText}`);
-  }
-
-  const result = await response.json();
-  return result.data;
-}
-
-/**
- * Busca histórico de auditorias
- * 
- * @param {number} page - Número da página
- * @param {number} limit - Quantidade por página
- * @returns {Promise<Object>} Histórico com paginação
- * @throws {Error} Se falhar requisição
- */
-export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
-  const response = await fetch(`${API_URL}/auditoria/historico?page=${page}&limit=${limit}`);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch audit history: ${response.statusText}`);
-  }
-
-  const result = await response.json();
-  return result;
-}
-
-
-/**
- * Busca todas as categorias de produtos
- * 
- * @returns {Promise<Array>} Lista de categorias
- * @throws {Error} Se falhar requisição
- */
-export async function fetchCategories() {
-  const response = await fetch(`${API_URL}/categorias`);
-  
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, `Failed to fetch categories: ${response.statusText}`));
-  }
-
-  const result = await response.json();
-  return result.data || [];
-}
-
-/**
- * Atualiza o status ativo de um produto
- * 
- * @param {string|number} id - ID do produto
- * @param {boolean} ativo - Novo valor para ativo
- * @returns {Promise<Object>} Dados do produto atualizado
- * @throws {Error} Se falhar requisição
- */
-export async function updateProductStatus(id, ativo) {
-  const response = await fetch(`${API_URL}/produtos/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ativo })
-  });
-  
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, `Failed to update product status: ${response.statusText}`));
-  }
-
-  const result = await response.json();
-  return result.data;
-}
-  
-export async function fetchKpiAcuracidade(dataInicio, dataFim) {  
-  const params = new URLSearchParams();  
-  if (dataInicio) params.append('dataInicio', dataInicio);  
-  if (dataFim) params.append('dataFim', dataFim);  
-  const queryString = params.toString();  
-  const url = queryString ? API_URL + '/auditoria/kpi/acuracidade?' + queryString : API_URL + '/auditoria/kpi/acuracidade';  
-  const response = await fetch(url);  
-  if (!response.ok) {  
-    throw new Error('Failed to fetch KPI accuracy: ' + response.statusText);  
-  }  
-  const result = await response.json();  
-  return result.data;  
-} 

@@ -1,12 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  BACKEND_URL,
-  fetchCategories,
-  fetchProducts,
-  fetchProductById,
-  getImageUrl,
-  updateProductStatus,
-} from '../services/api';
+import { fetchCategories, fetchProducts, fetchProductById, getImageUrl, updateProductStatus, API_URL } from '../services/api';
 import logo from '../assets/logo/logo.png';
 import AuditoriaModal from '../components/AuditoriaModal';
 import styles from './StockManagement.module.css';
@@ -142,12 +135,20 @@ const StockManagement = () => {
       let response;
       if (editProduct && editProduct.id) {
         // use POST to update when sending multipart FormData from the browser
+<<<<<<< HEAD
         response = await fetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
+=======
+        response = await fetch(`${API_URL}/produtos/${editProduct.id}`, {
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
           method: 'POST',
           body: formData,
         });
       } else {
+<<<<<<< HEAD
         response = await fetch(`${BACKEND_URL}/api/produtos`, {
+=======
+        response = await fetch(`${API_URL}/produtos`, {
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
           method: 'POST',
           body: formData,
         });
@@ -182,7 +183,11 @@ const StockManagement = () => {
     if (!newCategoryName.trim()) return;
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`${BACKEND_URL}/api/categorias`, {
+=======
+      const response = await fetch(`${API_URL}/categorias`, {
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: newCategoryName })
@@ -199,6 +204,38 @@ const StockManagement = () => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  // Single product launch
+  const handleSingleLaunch = async (e) => {
+    e.preventDefault();
+    if (!selectedProductId || !Number.isInteger(Number(launchQuantity)) || Number(launchQuantity) <= 0) {
+      alert('Selecione um produto válido e informe uma quantidade maior que zero.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/produtos/${selectedProductId}/movimentacoes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'entrada', motivo: 'compra', quantidade: Number(launchQuantity) }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err && err.error ? err.error.message : 'Falha ao lançar produto');
+      }
+
+      alert('Lançamento realizado com sucesso');
+      closeModal();
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao lançar produto: ' + err.message);
+    }
+  };
+
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
   const handleSearchChange = (value) => {
     setSearchTerm(value);
     if (!value) {
@@ -294,7 +331,11 @@ const StockManagement = () => {
     }
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`${BACKEND_URL}/api/produtos/movimentacoes/massa`, {
+=======
+      const response = await fetch(`${API_URL}/produtos/movimentacoes/massa`, {
+>>>>>>> b4f6f0c (teste-hospedagem: runtime config, API safe parse, banner URLs)
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movimentacoes: massItems.map(item => ({ id_produto: item.id_produto, tipo: 'entrada', quantidade: Number(item.quantidade), motivo: 'compra' })) }),

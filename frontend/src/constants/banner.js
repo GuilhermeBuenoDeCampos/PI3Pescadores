@@ -15,36 +15,42 @@ export const BANNER_IMAGES = [
   {
     id: 'aparecida',
     filename: 'Aparecida.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg',
     alt: 'Nossa Senhora Aparecida - Imagem do banner',
     title: 'Nossa Senhora Aparecida'
   },
   {
     id: 'crucifixo',
     filename: 'crucifixo.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/crucifixo.jpg',
     alt: 'Crucifixo - Imagem do banner',
     title: 'Crucifixo'
   },
   {
     id: 'barco',
     filename: 'barco.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/barco.jpg',
     alt: 'Barco dos Pescadores - Imagem do banner',
     title: 'Barco dos Pescadores'
   },
   {
     id: 'oratoria',
     filename: 'oratoria.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/oratoria.jpg',
     alt: 'Oratória - Imagem do banner',
     title: 'Oratória'
   },
   {
     id: 'rosario',
     filename: 'rosario.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/rosario.jpg',
     alt: 'Rosário - Imagem do banner',
     title: 'Rosário'
   },
   {
     id: 'kitoracao',
     filename: 'kitoracao.jpg',
+    url: 'https://pi3pescadores.onrender.com/uploads/Banner/kitoracao.jpg',
     alt: 'Kit Oração - Imagem do banner',
     title: 'Kit Oração'
   }

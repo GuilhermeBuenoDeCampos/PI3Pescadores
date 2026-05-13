@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getImageUrl } from '../services/api';
+import { getImageUrl, API_URL } from '../services/api';
 import { BANNER_IMAGES, getBannerImagePath } from '../constants/banner';
 import styles from './BannerCarousel.module.css';
 
@@ -22,7 +22,8 @@ function BannerCarousel() {
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [failedImages, setFailedImages] = useState(new Set());
 
-  const totalImages = BANNER_IMAGES.length;
+  const [remoteBanners, setRemoteBanners] = useState(null);
+  const totalImages = (remoteBanners && remoteBanners.length) || BANNER_IMAGES.length;
   
   /**
    * Navega para a próxima imagem
@@ -63,6 +64,28 @@ function BannerCarousel() {
     return () => clearInterval(interval);
   }, [isAutoPlay, totalImages]);
 
+  // Load remote banners from backend API if available
+  useEffect(() => {
+    let cancelled = false;
+    async function loadBanners(){
+      try{
+        const res = await fetch(`${API_URL}/banners`);
+        if(!res.ok) throw new Error('Failed to load banners');
+        const json = await res.json();
+        if(cancelled) return;
+        if(json && Array.isArray(json.data) && json.data.length) {
+          setRemoteBanners(json.data.map(item => ({ filename: item.filename, url: item.url, id: item.filename, title: item.filename, alt: item.filename })));
+        }
+      }catch(e){
+        // ignore; will use fallback images
+        console.warn('Could not load remote banners:', e.message || e);
+      }
+    }
+
+    loadBanners();
+    return () => { cancelled = true; };
+  }, []);
+
   /**
    * Retoma auto-play após 10 segundos de inatividade
    * Melhora UX permitindo volta ao modo automático
@@ -91,9 +114,10 @@ function BannerCarousel() {
   /**
    * Encontra próxima imagem válida (sem erro)
    */
-  const currentImage = BANNER_IMAGES[currentIndex];
-  const imagePath = getBannerImagePath(currentImage.filename);
-  const imageUrl = getImageUrl(imagePath);
+  // If remote banners available use them, otherwise fall back to local constants
+  const currentImage = remoteBanners && remoteBanners.length ? remoteBanners[currentIndex] : BANNER_IMAGES[currentIndex];
+  const imagePath = currentImage.url || getBannerImagePath(currentImage.filename);
+  const imageUrl = currentImage.url ? imagePath : getImageUrl(imagePath);
 
   // Guard clause: protege contra array vazio
   if (totalImages === 0) {
@@ -149,7 +173,7 @@ function BannerCarousel() {
 
       {/* Indicadores de página - Dots interativos */}
       <div className={styles.dotsContainer} role="tablist" aria-label="Seletores de página">
-        {BANNER_IMAGES.map((image, index) => (
+        {(remoteBanners && remoteBanners.length ? remoteBanners : BANNER_IMAGES).map((image, index) => (
           <button
             key={image.id}
             className={`${styles.dot} ${index === currentIndex ? styles.active : ''}`}
