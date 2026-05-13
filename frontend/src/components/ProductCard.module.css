@@ -10,7 +10,7 @@
 
 .card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(61, 78, 143, 0.12);
+  box-shadow: 0 20px 48px rgba(61, 78, 143, 0.18);
 }
 
 .image {
