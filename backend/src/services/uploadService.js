@@ -6,6 +6,8 @@ const AppError = require('../middlewares/appError');
 const supabase = require('../utils/supabaseClient');
 
 const UPLOAD_ROOT = path.resolve(__dirname, '../../uploads');
+const SUPABASE_URL_PREFIX = 'supabase://';
+const DEFAULT_SUPABASE_URL = 'https://pstkjndnjvazclmznpam.supabase.co';
 const MAX_FILE_SIZE = Number(process.env.UPLOAD_MAX_FILE_SIZE) || 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.jfif']);
 const ALLOWED_MIME_TYPES = new Set([
@@ -58,6 +60,53 @@ function assertInsideUploadRoot(filePath) {
     throw new AppError(400, 'Invalid upload path');
   }
   return resolved;
+}
+
+function normalizeUrl(url) {
+  if (!url) return '';
+  return String(url).trim().replace(/[\r\n\t]/g, '');
+}
+
+function supabaseStorageUrlForPath(objectPath) {
+  return `${SUPABASE_URL_PREFIX}${objectPath.replace(/^\/+/, '')}`;
+}
+
+function getSupabasePublicBaseUrl() {
+  return (process.env.SUPABASE_URL || process.env.SUPABASE_PUBLIC_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
+}
+
+function getSupabasePublicUrl(bucket, objectPath) {
+  const encodedPath = objectPath
+    .replace(/^\/+/, '')
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+
+  return `${getSupabasePublicBaseUrl()}/storage/v1/object/public/${encodeURIComponent(bucket)}/${encodedPath}`;
+}
+
+function parseSupabaseObjectPath(url, bucket) {
+  const cleanUrl = normalizeUrl(url);
+  if (!cleanUrl) return '';
+
+  if (cleanUrl.startsWith(SUPABASE_URL_PREFIX)) {
+    return cleanUrl.slice(SUPABASE_URL_PREFIX.length).replace(/^\/+/, '');
+  }
+
+  try {
+    const parsed = new URL(cleanUrl);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const objectIndex = parts.indexOf('object');
+    if (objectIndex === -1) return '';
+
+    const mode = parts[objectIndex + 1];
+    const urlBucket = parts[objectIndex + 2];
+    if (!['sign', 'public'].includes(mode) || urlBucket !== bucket) return '';
+
+    return parts.slice(objectIndex + 3).map(decodeURIComponent).join('/');
+  } catch {
+    return '';
+  }
 }
 
 class UploadService {
@@ -156,29 +205,8 @@ class UploadService {
         return localUrl;
       }
 
-      // Bucket público pode devolver URL permanente; bucket privado precisa de signed URL.
-      if (await this.detectPublicBucket()) {
-        const { data: publicData } = supabase.storage.from(this.bucket).getPublicUrl(destPath);
-        if (publicData?.publicUrl) {
-          this.cleanupLocalFile(resolvedFilePath);
-          return publicData.publicUrl;
-        }
-      }
-
-      const expiresIn = Number(process.env.SUPABASE_SIGNED_URL_EXPIRES) || 60 * 60 * 24 * 7;
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from(this.bucket)
-        .createSignedUrl(destPath, expiresIn);
-
-      if (!signedError) {
-        const signedUrl = signedData?.signedURL || signedData?.signedUrl;
-        if (signedUrl) {
-          this.cleanupLocalFile(resolvedFilePath);
-          return signedUrl;
-        }
-      }
-
-      return localUrl;
+      this.cleanupLocalFile(resolvedFilePath);
+      return supabaseStorageUrlForPath(destPath);
     } catch (ex) {
       console.error('Unexpected upload error:', ex.message);
       return localUrl;
@@ -205,6 +233,46 @@ class UploadService {
     }
     return uploadedUrls;
   }
+
+  normalizeStoredImageUrl(url) {
+    const cleanUrl = normalizeUrl(url);
+    if (!cleanUrl) return '';
+
+    const objectPath = parseSupabaseObjectPath(cleanUrl, this.bucket);
+    if (objectPath) {
+      return supabaseStorageUrlForPath(objectPath);
+    }
+
+    return cleanUrl;
+  }
+
+  async resolveImageUrl(url) {
+    const normalized = this.normalizeStoredImageUrl(url);
+    if (!normalized || !normalized.startsWith(SUPABASE_URL_PREFIX)) {
+      return normalized;
+    }
+
+    const objectPath = normalized.slice(SUPABASE_URL_PREFIX.length);
+
+    if (!supabase) {
+      return getSupabasePublicUrl(this.bucket, objectPath);
+    }
+
+    if (await this.detectPublicBucket()) {
+      const { data } = supabase.storage.from(this.bucket).getPublicUrl(objectPath);
+      return data?.publicUrl || getSupabasePublicUrl(this.bucket, objectPath);
+    }
+
+    const expiresIn = Number(process.env.SUPABASE_SIGNED_URL_EXPIRES) || 60 * 60 * 24 * 7;
+    const { data, error } = await supabase.storage.from(this.bucket).createSignedUrl(objectPath, expiresIn);
+
+    if (error) {
+      console.error('Supabase signed URL error:', error.message);
+      return getSupabasePublicUrl(this.bucket, objectPath);
+    }
+
+    return data?.signedURL || data?.signedUrl || getSupabasePublicUrl(this.bucket, objectPath);
+  }
 }
 
 module.exports = new UploadService();
@@ -213,4 +281,7 @@ module.exports._private = {
   sanitizeFilename,
   createStoredFilename,
   isAllowedFile,
+  parseSupabaseObjectPath,
+  supabaseStorageUrlForPath,
+  getSupabasePublicUrl,
 };

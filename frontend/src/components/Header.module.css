@@ -64,6 +64,23 @@
   color: var(--indigo-dark);
 }
 
+.authButton {
+  border: 0;
+  background: transparent;
+  color: var(--text-mid);
+  font: inherit;
+  font-size: 0.84rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.authButton:hover {
+  color: var(--indigo-dark);
+}
+
 @media (max-width: 720px) {
   .header {
     align-items: flex-start;
@@ -104,4 +121,3 @@
   border: 1px solid #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
-

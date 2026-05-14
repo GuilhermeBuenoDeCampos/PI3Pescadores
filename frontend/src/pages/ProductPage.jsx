@@ -41,9 +41,10 @@ function ProductPage() {
           throw new Error('Produto não encontrado');
         }
 
+        const firstImageUrl = productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : '';
         setProduct(productData);
-        setActiveImage(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
-        setMainImgSrc(productData.imagens?.[0]?.url ? getImageUrl(productData.imagens[0].url) : semImagem);
+        setActiveImage(firstImageUrl || semImagem);
+        setMainImgSrc(firstImageUrl || semImagem);
       } catch (err) {
         console.error('Erro ao carregar produto:', err);
         setError(err?.message || 'Falha ao carregar o produto');

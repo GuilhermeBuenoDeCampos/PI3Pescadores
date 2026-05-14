@@ -1,5 +1,6 @@
 const db = require('../database/models');
 const AppError = require('../middlewares/appError');
+const uploadService = require('./uploadService');
 
 const ALLOWED_MOVEMENT_TYPES = new Set(['entrada', 'saida']);
 const ALLOWED_MOVEMENT_REASONS = new Set(['compra', 'venda', 'ajuste']);
@@ -67,21 +68,21 @@ function calcularEstoqueAtual(movimentacoes) {
   }, 0);
 }
 
-function normalizeImageUrl(url) {
-  if (!url) return '';
-  return String(url).trim().replace(/[\r\n\t]/g, '');
-}
-
 function formatarCampoNumerico(campo, scale) {
   if (campo === null || campo === undefined) return null;
   return String(Number(campo).toFixed(scale));
 }
 
-function toProdutoPayload(produto) {
+async function toProdutoPayload(produto) {
   const plain = produto.toJSON ? produto.toJSON() : produto;
   const imagens = sortImagens(plain.imagens);
   const movimentacoes = sortMovimentacoes(plain.movimentacoesEstoque);
   const estoqueAtual = calcularEstoqueAtual(movimentacoes);
+  const imagensPayload = await Promise.all(imagens.map(async (imagem) => ({
+    id: imagem.id,
+    url: await uploadService.resolveImageUrl(imagem.url),
+    criado_em: imagem.criado_em,
+  })));
 
   return {
     id: plain.id,
@@ -102,13 +103,7 @@ function toProdutoPayload(produto) {
           nome: plain.categoria.nome,
         }
       : null,
-    imagens: imagens.map((imagem) => {
-      return {
-        id: imagem.id,
-        url: normalizeImageUrl(imagem.url),
-        criado_em: imagem.criado_em,
-      };
-    }),
+    imagens: imagensPayload,
     movimentacoes_estoque: movimentacoes.map((movimentacao) => ({
       id: movimentacao.id,
       tipo: movimentacao.tipo,
@@ -204,7 +199,7 @@ exports.listarProdutos = async (query) => {
     order: [['id', 'DESC']],
   });
 
-  return produtos.map(toProdutoPayload);
+  return Promise.all(produtos.map(toProdutoPayload));
 };
 
 exports.buscarProdutoPorId = async (id) => {
@@ -318,11 +313,11 @@ exports.criarProduto = async (payload) => {
     const imagensValidadas = imagens
       .map((item) => {
         if (typeof item === 'string') {
-          return item.trim();
+          return uploadService.normalizeStoredImageUrl(item);
         }
 
         if (item && typeof item.url === 'string') {
-          return item.url.trim();
+          return uploadService.normalizeStoredImageUrl(item.url);
         }
 
         return '';
@@ -347,7 +342,7 @@ exports.criarProduto = async (payload) => {
 };
 
 exports.adicionarImagem = async (idProduto, payload) => {
-  const url = String(payload.url || '').trim();
+  const url = uploadService.normalizeStoredImageUrl(payload.url);
 
   if (!url) {
     throw new AppError(400, 'url is required');
@@ -364,7 +359,7 @@ exports.adicionarImagem = async (idProduto, payload) => {
   return {
     id: imagem.id,
     id_produto: imagem.id_produto,
-    url: imagem.url,
+    url: await uploadService.resolveImageUrl(imagem.url),
     criado_em: imagem.criado_em,
   };
 };
@@ -428,7 +423,10 @@ exports.atualizarProduto = async (idProduto, payload) => {
     if (imagens && imagens.length > 0) {
       // Atualização com novas imagens substitui a galeria inteira do produto.
       await db.ProdutoImagem.destroy({ where: { id_produto: produtoModel.id }, transaction });
-      await db.ProdutoImagem.bulkCreate(imagens.map(url => ({ id_produto: produtoModel.id, url, criado_em: now })), { transaction });
+      const imagensNormalizadas = imagens
+        .map((url) => uploadService.normalizeStoredImageUrl(url))
+        .filter(Boolean);
+      await db.ProdutoImagem.bulkCreate(imagensNormalizadas.map(url => ({ id_produto: produtoModel.id, url, criado_em: now })), { transaction });
     }
 
     return produtoModel;

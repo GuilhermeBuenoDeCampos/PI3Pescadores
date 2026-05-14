@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   BACKEND_URL,
+  apiFetch,
   fetchCategories,
   fetchProducts,
   fetchProductById,
@@ -142,12 +143,12 @@ const StockManagement = () => {
       let response;
       if (editProduct && editProduct.id) {
         // POST é mantido para edição multipart porque alguns clientes lidam mal com PUT + FormData.
-        response = await fetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
+        response = await apiFetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
           method: 'POST',
           body: formData,
         });
       } else {
-        response = await fetch(`${BACKEND_URL}/api/produtos`, {
+        response = await apiFetch(`${BACKEND_URL}/api/produtos`, {
           method: 'POST',
           body: formData,
         });
@@ -182,7 +183,7 @@ const StockManagement = () => {
     if (!newCategoryName.trim()) return;
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/categorias`, {
+      const response = await apiFetch(`${BACKEND_URL}/api/categorias`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome: newCategoryName })
@@ -294,7 +295,7 @@ const StockManagement = () => {
     }
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/produtos/movimentacoes/massa`, {
+      const response = await apiFetch(`${BACKEND_URL}/api/produtos/movimentacoes/massa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movimentacoes: massItems.map(item => ({ id_produto: item.id_produto, tipo: 'entrada', quantidade: Number(item.quantidade), motivo: 'compra' })) }),

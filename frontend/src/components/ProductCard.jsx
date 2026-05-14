@@ -20,7 +20,8 @@ function generateSlug(nome) {
 }
 
 function ProductCard({ product }) {
-  const [imgSrc, setImgSrc] = useState(product.imagens?.[0]?.url ? getImageUrl(product.imagens[0].url) : semImagem);
+  const imageUrl = product.imagens?.[0]?.url ? getImageUrl(product.imagens[0].url) : '';
+  const [imgSrc, setImgSrc] = useState(imageUrl || semImagem);
 
   return (
     <Link to={`/produto-nome/${generateSlug(product.nome)}`} className={styles.card}>

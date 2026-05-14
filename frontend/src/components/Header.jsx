@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import styles from './Header.module.css';
 import logo from '../assets/logo/logo.png';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { FaShoppingCart } from 'react-icons/fa';
 
 function Header() {
   const { cart } = useCart ? useCart() : { cart: { items: [] } };
+  const auth = useAuth();
   const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   return (
     <header className={styles.header}> 
@@ -23,7 +25,14 @@ function Header() {
         <Link to="/">Início</Link>
         <a href="#categories">Categorias</a>
         <a href="#catalog">Catálogo</a>
-        <Link to="/estoque">Estoque</Link>
+        {auth?.canManageStock && <Link to="/estoque">Estoque</Link>}
+        {auth?.isAuthenticated ? (
+          <button type="button" className={styles.authButton} onClick={auth.logout}>
+            Sair
+          </button>
+        ) : (
+          <Link to="/login">Entrar</Link>
+        )}
         <Link to="/carrinho" className={styles.cartIcon} aria-label="Carrinho">
           <FaShoppingCart size={22} />
           {itemCount > 0 && (
