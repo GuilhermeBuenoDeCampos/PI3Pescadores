@@ -10,9 +10,8 @@
  * - PROD: VITE_BACKEND_URL=https://api.seudominio.com
  */
 
-// URL base do backend - Configurável via variáveis de ambiente
-export const BACKEND_URL =
-  (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+// URL base do backend local
+export const BACKEND_URL = 'http://localhost:3000';
 
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -23,6 +22,64 @@ async function parseApiError(response, fallbackMessage) {
   } catch {
     return fallbackMessage;
   }
+}
+
+export async function registerUser(payload) {
+  const response = await fetch(`${API_URL}/auth/cadastro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Nao foi possivel criar a conta.'));
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+export async function loginUser(payload) {
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Email ou senha invalidos.'));
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+export function getAuthToken() {
+  return localStorage.getItem('authToken');
+}
+
+export function getAuthUser() {
+  const rawUser = localStorage.getItem('authUser');
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser);
+  } catch {
+    return null;
+  }
+}
+
+export function saveAuthSession(session) {
+  localStorage.setItem('authToken', session.token);
+  localStorage.setItem('authUser', JSON.stringify(session.usuario));
+}
+
+export function clearAuthSession() {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('authUser');
 }
 
 /**

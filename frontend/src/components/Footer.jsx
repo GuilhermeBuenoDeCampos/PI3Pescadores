@@ -23,7 +23,6 @@ function Footer() {
           <a href="/">Início</a>
           <a href="/#categories">Categorias</a>
           <a href="/#catalog">Catálogo</a>
-          <a href="/estoque">Estoque</a>
         </div>
 
         <div className={styles.footerCol}>

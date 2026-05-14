@@ -105,3 +105,111 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+.authLinks {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.authLinks a {
+  white-space: nowrap;
+}
+
+.authLinks .registerLink {
+  background: var(--indigo-dark);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 0.62rem 0.82rem;
+}
+
+.authLinks .registerLink:hover {
+  color: #ffffff;
+  background: #2f3f68;
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userButton {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(61, 78, 143, 0.18);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--indigo-dark);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.userButton:hover {
+  border-color: rgba(61, 78, 143, 0.45);
+  box-shadow: 0 4px 14px rgba(61, 78, 143, 0.14);
+}
+
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 230px;
+  background: #ffffff;
+  border: 1px solid rgba(61, 78, 143, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(30, 37, 66, 0.14);
+  padding: 8px;
+  z-index: 120;
+}
+
+.userSummary {
+  padding: 10px 10px 12px;
+  border-bottom: 1px solid rgba(61, 78, 143, 0.1);
+  margin-bottom: 6px;
+}
+
+.userSummary strong,
+.userSummary span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userSummary strong {
+  color: var(--indigo-dark);
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+}
+
+.userSummary span {
+  color: var(--text-light);
+  font-size: 0.78rem;
+}
+
+.userDropdown a,
+.userDropdown button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-mid);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  padding: 10px;
+  text-align: left;
+  text-transform: none;
+  border-radius: 6px;
+}
+
+.userDropdown a:hover,
+.userDropdown button:hover {
+  background: rgba(61, 78, 143, 0.08);
+  color: var(--indigo-dark);
+}
+

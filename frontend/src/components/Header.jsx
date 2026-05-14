@@ -1,35 +1,97 @@
-
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FaBoxOpen, FaMapMarkerAlt, FaShoppingCart, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 import styles from './Header.module.css';
 import logo from '../assets/logo/logo.png';
 import { useCart } from '../context/CartContext';
-import { FaShoppingCart } from 'react-icons/fa';
+import { clearAuthSession, getAuthToken, getAuthUser } from '../services/api';
 
 function Header() {
   const { cart } = useCart ? useCart() : { cart: { items: [] } };
+  const [user, setUser] = useState(() => (getAuthToken() ? getAuthUser() : null));
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  function handleLogout() {
+    clearAuthSession();
+    setUser(null);
+    setIsUserMenuOpen(false);
+  }
+
   return (
-    <header className={styles.header}> 
+    <header className={styles.header}>
       <div className={styles.brand}>
         <img src={logo} alt="Logo Tres Pescadores" className={styles.logoMark} />
         <div>
           <Link to="/" className={styles.title}>
             Tres Pescadores Store
           </Link>
-          <p className={styles.subtitle}>Artigos religiosos para fé e devoção</p>
+          <p className={styles.subtitle}>Artigos religiosos para fe e devocao</p>
         </div>
       </div>
       <nav className={styles.navLinks}>
-        <Link to="/">Início</Link>
+        <Link to="/">Inicio</Link>
         <a href="#categories">Categorias</a>
-        <a href="#catalog">Catálogo</a>
-        <Link to="/estoque">Estoque</Link>
+        <a href="#catalog">Catalogo</a>
         <Link to="/carrinho" className={styles.cartIcon} aria-label="Carrinho">
           <FaShoppingCart size={22} />
           {itemCount > 0 && (
             <span className={styles.cartCount}>{itemCount}</span>
           )}
         </Link>
+        {user ? (
+          <div className={styles.userMenu} ref={userMenuRef}>
+            <button
+              type="button"
+              className={styles.userButton}
+              aria-label="Menu do usuario"
+              aria-expanded={isUserMenuOpen}
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <FaUserCircle size={25} />
+            </button>
+            {isUserMenuOpen && (
+              <div className={styles.userDropdown}>
+                <div className={styles.userSummary}>
+                  <strong>{user.nome || 'Minha conta'}</strong>
+                  <span>{user.email}</span>
+                </div>
+                <Link to="/meus-pedidos" onClick={() => setIsUserMenuOpen(false)}>
+                  <FaBoxOpen size={14} />
+                  Meus pedidos
+                </Link>
+                <Link to="/meus-enderecos" onClick={() => setIsUserMenuOpen(false)}>
+                  <FaMapMarkerAlt size={14} />
+                  Meus enderecos
+                </Link>
+                <button type="button" onClick={handleLogout}>
+                  <FaSignOutAlt size={14} />
+                  Sair
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={styles.authLinks}>
+            <Link to="/login">Entrar</Link>
+            <Link to="/cadastro" className={styles.registerLink}>Cadastrar</Link>
+          </div>
+        )}
       </nav>
     </header>
   );

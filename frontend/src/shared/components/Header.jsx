@@ -23,7 +23,6 @@ function Header() {
         <Link to="/">Início</Link>
         <a href="#categories">Categorias</a>
         <a href="#catalog">Catálogo</a>
-        <Link to="/estoque">Estoque</Link>
       </nav>
     </header>
   );
