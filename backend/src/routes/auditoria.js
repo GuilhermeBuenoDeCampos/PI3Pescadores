@@ -12,4 +12,7 @@ router.post('/salvar', auditoriaController.salvarAuditoria);
 // Get audit history
 router.get('/historico', auditoriaController.getHistoricoAuditoria);
 
+// Get average stock accuracy
+router.get('/acuracidade-media', auditoriaController.getMediaAcuracidade);
+
 module.exports = router;

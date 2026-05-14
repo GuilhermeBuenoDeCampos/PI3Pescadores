@@ -110,3 +110,23 @@ exports.getHistoricoAuditoria = asyncHandler(async (req, res) => {
     },
   });
 });
+
+exports.getMediaAcuracidade = asyncHandler(async (req, res) => {
+  const media = await db.AuditoriaProduto.findOne({
+    attributes: [
+      [db.sequelize.fn('AVG', db.sequelize.col('acuracidade')), 'media_acuracidade'],
+      [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_auditorias'],
+    ],
+    raw: true,
+  });
+
+  const mediaAcuracidade = Number(media?.media_acuracidade || 0);
+  const totalAuditorias = Number(media?.total_auditorias || 0);
+
+  res.json({
+    data: {
+      media_acuracidade: Number(mediaAcuracidade.toFixed(2)),
+      total_auditorias: totalAuditorias,
+    },
+  });
+});

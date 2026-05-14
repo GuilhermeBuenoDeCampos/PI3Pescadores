@@ -7,6 +7,7 @@ import CartPage from './pages/CartPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AccountPage from './pages/AccountPage';
+import AdminDashboard from './pages/AdminDashboard';
 import styles from './App.module.css';
 
 // App component defines the two main application pages.
@@ -23,6 +24,7 @@ function App() {
         <Route path="/carrinho" element={<CartPage />} />
         <Route path="/meus-pedidos" element={<AccountPage type="orders" />} />
         <Route path="/meus-enderecos" element={<AccountPage type="addresses" />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </div>
   );
