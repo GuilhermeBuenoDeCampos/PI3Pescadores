@@ -231,6 +231,17 @@ export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
   return result;
 }
 
+export async function fetchMediaAcuracidade() {
+  const response = await fetch(`${API_URL}/auditoria/acuracidade-media`);
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, `Failed to fetch accuracy average: ${response.statusText}`));
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
 
 /**
  * Busca todas as categorias de produtos
