@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
-import ProductCard from '../components/ProductCard';
 import './cart.css';
+import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
+import { getImageUrl } from '../services/api';
 import { formatPrice } from '../utils/productUtils';
 
 function CartPage() {
@@ -22,8 +23,14 @@ function CartPage() {
     decreaseQuantity(productId);
   };
 
+  const getProductPrice = (product) => Number(product.preco_venda ?? product.preco ?? 0) || 0;
+
+  const getProductImage = (product) => (
+    product.imagens?.[0]?.url ? getImageUrl(product.imagens[0].url) : semImagem
+  );
+
   const subtotal = displayItems.reduce((total, item) => {
-    const price = Number(item.product.preco_venda ?? item.product.preco ?? 0) || 0;
+    const price = getProductPrice(item.product);
     return total + price * item.quantity;
   }, 0);
 
@@ -39,6 +46,31 @@ function CartPage() {
       alert('Cupom inválido');
       setCouponDiscount(0);
     }
+  };
+
+  const buildWhatsAppMessage = () => {
+    const productLines = displayItems.map(({ product, quantity }) => {
+      const itemTotal = getProductPrice(product) * quantity;
+      return `* ${product.nome} (${quantity}x) - R$ ${formatPrice(itemTotal)}`;
+    });
+
+    return [
+      'Olá! Gostaria de fazer um pedido:',
+      '',
+      ...productLines,
+      '',
+      `Total: R$ ${formatPrice(total)}`,
+      '',
+      'Meu nome:',
+      'Meu telefone:',
+    ].join('\n');
+  };
+
+  const handleCheckoutWhatsApp = () => {
+    if (displayItems.length === 0) return;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppMessage())}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -62,9 +94,11 @@ function CartPage() {
               <div className="cart-item" key={product.id}>
                 <div className="item-img-box">
                   <img
-                    src={product.imagens?.[0]?.url ? (product.imagens[0].url.startsWith('http') ? product.imagens[0].url : `/api/images/${product.imagens[0].url}`) : 'https://via.placeholder.com/120'}
+                    src={getProductImage(product)}
                     alt={product.nome}
-                    onError={(e) => (e.target.src = 'https://via.placeholder.com/120')}
+                    onError={(event) => {
+                      event.currentTarget.src = semImagem;
+                    }}
                   />
                 </div>
                 <div className="item-info">
@@ -99,7 +133,9 @@ function CartPage() {
               <span>Total</span>
               <span>R$ {formatPrice(total)}</span>
             </div>
-            <button className="btn-checkout">Continuar compra</button>
+            <button className="btn-checkout" type="button" onClick={handleCheckoutWhatsApp} disabled={displayItems.length === 0}>
+              Continuar compra
+            </button>
           </div>
         </div>
       </main>

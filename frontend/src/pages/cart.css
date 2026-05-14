@@ -56,10 +56,20 @@ body {
 
 .cart-item:last-child { border-bottom: none; }
 
+.item-img-box {
+  width: 120px;
+  height: 120px;
+  border: 1px solid var(--tp-border-light);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f3f3;
+}
+
 .item-img-box img {
   width: 100%;
-  height: auto;
-  border-radius: 4px;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .item-title {
@@ -184,6 +194,11 @@ body {
   filter: brightness(0.9);
 }
 
+.btn-checkout:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Seção de produtos sugeridos */
 .maybe-interest {
   max-width: 1100px;
@@ -219,9 +234,18 @@ body {
 @media (max-width: 900px) {
   .cart-container { padding: 0 16px; gap: 12px; }
   .cart-item { grid-template-columns: 100px 1fr 110px 100px; gap: 12px; padding: 16px; }
+  .item-img-box {
+    width: 100px;
+    height: 100px;
+  }
 }
 
 @media (max-width: 600px) {
+  .item-img-box {
+    width: 84px;
+    height: 84px;
+  }
+
   .maybe-grid {
     grid-template-columns: 1fr;
   }
