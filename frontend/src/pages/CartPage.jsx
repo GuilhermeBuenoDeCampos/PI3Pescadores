@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
 import './cart.css';
 import semImagem from '../assets/ProdutoSemImagem/semimagem.png';
-import { getImageUrl } from '../services/api';
+import { getAuthToken, getAuthUser, getImageUrl } from '../services/api';
 import { formatPrice } from '../utils/productUtils';
 
 function CartPage() {
   const { cart, removeFromCart, clearCart, addToCart, decreaseQuantity } = useCart();
+  const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
 
@@ -48,11 +49,14 @@ function CartPage() {
     }
   };
 
-  const buildWhatsAppMessage = () => {
+  const buildWhatsAppMessage = (user) => {
     const productLines = displayItems.map(({ product, quantity }) => {
       const itemTotal = getProductPrice(product) * quantity;
       return `* ${product.nome} (${quantity}x) - R$ ${formatPrice(itemTotal)}`;
     });
+
+    const userName = user?.nome || '';
+    const userPhone = user?.telefone || '';
 
     return [
       'Olá! Gostaria de fazer um pedido:',
@@ -61,15 +65,21 @@ function CartPage() {
       '',
       `Total: R$ ${formatPrice(total)}`,
       '',
-      'Meu nome:',
-      'Meu telefone:',
+      `Meu nome: ${userName}`,
+      `Meu telefone: ${userPhone}`,
     ].join('\n');
   };
 
   const handleCheckoutWhatsApp = () => {
     if (displayItems.length === 0) return;
 
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppMessage())}`;
+    if (!getAuthToken()) {
+      navigate('/login', { state: { from: '/carrinho' } });
+      return;
+    }
+
+    const user = getAuthUser();
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppMessage(user))}`;
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -85,8 +95,12 @@ function CartPage() {
 
             {displayItems.length === 0 && (
               <div className="cart-empty">
-                <p>Seu carrinho está vazio.</p>
-                <Link to="/">Voltar ao catálogo</Link>
+                <div className="cart-empty-icon" aria-hidden="true">
+                  <span />
+                </div>
+                <h3>Seu carrinho está vazio</h3>
+                <p>Escolha seus produtos favoritos e volte aqui para finalizar o pedido.</p>
+                <Link to="/" className="cart-empty-link">Ver produtos</Link>
               </div>
             )}
 

@@ -79,6 +79,7 @@ function ProductPage() {
   }, [product]);
 
   const productPrice = formatPrice(product?.preco_venda);
+  const isOutOfStock = Number(product?.estoque_atual) <= 0;
 
   if (loading) {
     return (
@@ -198,21 +199,25 @@ function ProductPage() {
               <button
                 className={`${styles.btn} ${styles.primaryButton}`}
                 onClick={() => {
+                  if (isOutOfStock) return;
                   addToCart(product);
                   setJustAdded(true);
                   setTimeout(() => setJustAdded(false), 1800);
                 }}
+                disabled={isOutOfStock}
                 aria-live="polite"
               >
-                {justAdded ? 'Adicionado' : 'Adicionar ao carrinho'}
+                {isOutOfStock ? 'Fora de estoque' : justAdded ? 'Adicionado' : 'Adicionar ao carrinho'}
               </button>
               <button
                 type="button"
                 className={`${styles.btn} ${styles.secondaryButton}`}
                 onClick={() => {
+                  if (isOutOfStock) return;
                   addToCart(product);
                   navigate('/carrinho');
                 }}
+                disabled={isOutOfStock}
               >
                 Comprar agora
               </button>

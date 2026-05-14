@@ -8,6 +8,11 @@ const initialState = {
   items: [], // { product, quantity }
 };
 
+function hasAvailableStock(product) {
+  if (product?.estoque_atual === undefined || product?.estoque_atual === null) return true;
+  return Number(product.estoque_atual) > 0;
+}
+
 function loadInitialState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -24,6 +29,8 @@ function loadInitialState() {
 function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD_TO_CART': {
+      if (!hasAvailableStock(action.product)) return state;
+
       const existing = state.items.find(item => item.product.id === action.product.id);
       if (existing) {
         return {

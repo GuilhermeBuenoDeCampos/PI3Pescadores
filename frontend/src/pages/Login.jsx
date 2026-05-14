@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import styles from './Auth.module.css';
 import logo from '../assets/logo/logo.png';
@@ -14,6 +14,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -32,7 +33,7 @@ const Login = () => {
         try {
             const session = await loginUser(form);
             saveAuthSession(session);
-            navigate('/');
+            navigate(location.state?.from || '/');
         } catch (err) {
             setError(err.message || 'Email ou senha invalidos.');
         } finally {

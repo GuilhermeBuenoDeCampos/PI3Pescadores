@@ -48,12 +48,6 @@ function Header() {
         <Link to="/">Inicio</Link>
         <a href="#categories">Categorias</a>
         <a href="#catalog">Catalogo</a>
-        <Link to="/carrinho" className={styles.cartIcon} aria-label="Carrinho">
-          <FaShoppingCart size={22} />
-          {itemCount > 0 && (
-            <span className={styles.cartCount}>{itemCount}</span>
-          )}
-        </Link>
         {user ? (
           <div className={styles.userMenu} ref={userMenuRef}>
             <button
@@ -92,6 +86,12 @@ function Header() {
             <Link to="/cadastro" className={styles.registerLink}>Cadastrar</Link>
           </div>
         )}
+        <Link to="/carrinho" className={styles.cartIcon} aria-label="Carrinho">
+          <FaShoppingCart size={22} />
+          {itemCount > 0 && (
+            <span className={styles.cartCount}>{itemCount}</span>
+          )}
+        </Link>
       </nav>
     </header>
   );
