@@ -42,7 +42,7 @@
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 20px;
   margin-bottom: 18px;
 }
@@ -70,6 +70,43 @@
 .kpiCard strong {
   font-size: 1.65rem;
   line-height: 1;
+}
+
+.searchKpi {
+  background: #08936f;
+}
+
+.searchKpi strong {
+  font-size: 1.16rem;
+  line-height: 1.2;
+  min-height: 2.8rem;
+  overflow-wrap: anywhere;
+}
+
+.searchList {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.searchList small {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.searchList span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchList b {
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .dashboardGrid {

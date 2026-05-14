@@ -15,7 +15,7 @@ import {
 import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2';
 import { FiRefreshCw } from 'react-icons/fi';
 import logo from '../assets/logo/logo.png';
-import { fetchMediaAcuracidade } from '../services/api';
+import { fetchMediaAcuracidade, fetchPalavrasMaisPesquisadas } from '../services/api';
 import styles from './AdminDashboard.module.css';
 
 ChartJS.register(
@@ -60,18 +60,25 @@ function AdminDashboard() {
   const [accuracy, setAccuracy] = useState(null);
   const [loadingAccuracy, setLoadingAccuracy] = useState(true);
   const [accuracyError, setAccuracyError] = useState('');
+  const [topSearches, setTopSearches] = useState([]);
+  const [loadingSearches, setLoadingSearches] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadAccuracy() {
+    async function loadDashboardData() {
       try {
         setLoadingAccuracy(true);
+        setLoadingSearches(true);
         setAccuracyError('');
-        const data = await fetchMediaAcuracidade();
+        const [accuracyData, searchesData] = await Promise.all([
+          fetchMediaAcuracidade(),
+          fetchPalavrasMaisPesquisadas(5),
+        ]);
 
         if (isMounted) {
-          setAccuracy(data);
+          setAccuracy(accuracyData);
+          setTopSearches(searchesData);
         }
       } catch (error) {
         if (isMounted) {
@@ -80,11 +87,12 @@ function AdminDashboard() {
       } finally {
         if (isMounted) {
           setLoadingAccuracy(false);
+          setLoadingSearches(false);
         }
       }
     }
 
-    loadAccuracy();
+    loadDashboardData();
 
     return () => {
       isMounted = false;
@@ -92,6 +100,7 @@ function AdminDashboard() {
   }, []);
 
   const accuracyValue = Math.max(0, Math.min(100, Number(accuracy?.media_acuracidade || 0)));
+  const topSearch = topSearches[0];
 
   const revenueData = useMemo(() => ({
     labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul'],
@@ -189,6 +198,18 @@ function AdminDashboard() {
           <article className={styles.kpiCard}>
             <span>Taxa de recompra</span>
             <strong>26,8%</strong>
+          </article>
+          <article className={`${styles.kpiCard} ${styles.searchKpi}`}>
+            <span>Palavras mais pesquisadas</span>
+            <strong>{loadingSearches ? 'Carregando...' : topSearch?.palavra || 'Sem dados'}</strong>
+            <div className={styles.searchList}>
+              {topSearches.slice(0, 4).map((item) => (
+                <small key={item.palavra}>
+                  <span>{item.palavra}</span>
+                  <b>{item.total}</b>
+                </small>
+              ))}
+            </div>
           </article>
         </section>
 

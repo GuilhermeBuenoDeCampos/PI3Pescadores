@@ -242,6 +242,32 @@ export async function fetchMediaAcuracidade() {
   return result.data;
 }
 
+export async function registrarPalavraPesquisada(palavra) {
+  const response = await fetch(`${API_URL}/pesquisas`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ palavra }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Nao foi possivel registrar a pesquisa.'));
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+export async function fetchPalavrasMaisPesquisadas(limit = 5) {
+  const response = await fetch(`${API_URL}/pesquisas/mais-pesquisadas?limit=${limit}`);
+
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, 'Nao foi possivel carregar as palavras mais pesquisadas.'));
+  }
+
+  const result = await response.json();
+  return result.data || [];
+}
+
 
 /**
  * Busca todas as categorias de produtos

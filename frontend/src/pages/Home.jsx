@@ -7,7 +7,7 @@ import PriceFilter from '../components/PriceFilter';
 import SectionTitle from '../components/SectionTitle';
 import ProductCard from '../components/ProductCard';
 import Footer from '../components/Footer';
-import { fetchProducts, fetchCategories } from '../services/api';
+import { fetchProducts, fetchCategories, registrarPalavraPesquisada } from '../services/api';
 import { sortProductsByPrice } from '../utils/productUtils';
 import styles from './Home.module.css';
 
@@ -111,7 +111,14 @@ function Home() {
 
   function handleSearchSubmit(event) {
     event.preventDefault();
-    setSearchQuery(searchText);
+    const query = searchText.trim();
+    setSearchQuery(query);
+
+    if (query) {
+      registrarPalavraPesquisada(query).catch((err) => {
+        console.error('Erro ao registrar pesquisa:', err);
+      });
+    }
   }
 
   return (
