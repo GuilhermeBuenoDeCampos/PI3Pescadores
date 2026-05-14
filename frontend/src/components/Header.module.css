@@ -52,6 +52,14 @@
   gap: 32px;
 }
 
+.loginLink {
+  color: var(--text-mid);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  padding-left: 8px;
+}
+
 .navLinks a {
   color: var(--text-mid);
   font-size: 0.84rem;

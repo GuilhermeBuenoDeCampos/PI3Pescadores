@@ -1,0 +1,52 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  background-color: #faf8f3;
+}
+.side {
+  width: 50%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.panelInner {
+  width: 100%;
+  max-width: 520px;
+  padding: 32px;
+  box-sizing: border-box;
+  transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 450ms ease;
+}
+
+/* initial positions for login (form left, logo right) */
+.container.login .leftInner { transform: translateX(0); opacity: 1 }
+.container.login .rightInner { transform: translateX(0); opacity: 1 }
+
+/* when in register mode we slide the inner panels to swap sides */
+.container.register .leftInner { transform: translateX(-120%); opacity: 0 }
+.container.register .rightInner { transform: translateX(120%); opacity: 0 }
+
+/* the contents that slide into view */
+.slidingContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formBox {
+  width: 100%;
+}
+
+/* desktop decoration side */
+.decoration {
+  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+}
+
+@media (max-width: 767px) {
+  .container { flex-direction: column }
+  .side { width: 100%; }
+  .container.register .leftInner, .container.register .rightInner { transform: translateX(0); opacity: 1 }
+}

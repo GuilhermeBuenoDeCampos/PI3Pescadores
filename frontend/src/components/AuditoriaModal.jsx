@@ -148,12 +148,12 @@ export default function AuditoriaModal({ isOpen, onClose, onSave }) {
                             {diferenca > 0 ? '+' : ''}{diferenca}
                           </p>
                         </div>
-                        <div>
-                          <p>Acuracidade:</p>
-                          <p className={`${styles.valor} ${acuracidade < 95 ? styles.alerta : styles.ok}`}>
-                            {acuracidade.toFixed(1)}%
-                          </p>
-                        </div>
+                          <div>
+                            <p>Acuracidade:</p>
+                            <p className={`${styles.valor} ${acuracidade < 95 ? styles.alerta : styles.ok}`}>
+                              {acuracidade.toFixed(1)}%
+                            </p>
+                          </div>
                       </div>
                     </div>
                   );

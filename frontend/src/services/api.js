@@ -174,6 +174,22 @@ export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
   return result;
 }
 
+/**
+ * Busca métricas de feedback/satisfação no backend.
+ * Espera objeto: { labels: string[], values: number[] }
+ * Se o endpoint não existir, o chamador deve prover fallback.
+ */
+export async function fetchFeedbackMetrics() {
+  try {
+    const response = await fetch(`${API_URL}/feedback/metrics`);
+    if (!response.ok) throw new Error('No feedback metrics');
+    const result = await response.json();
+    return result.data || result;
+  } catch (err) {
+    throw err;
+  }
+}
+
 
 /**
  * Busca todas as categorias de produtos

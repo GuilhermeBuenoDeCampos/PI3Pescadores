@@ -49,6 +49,7 @@ function CartPage() {
           <div className="cart-items">
             <div className="cart-header">
               <h2>Seu Carrinho</h2>
+              <div className="cart-header-sub">Resumo dos itens adicionados — revise antes de finalizar.</div>
             </div>
 
             {displayItems.length === 0 && (
@@ -62,23 +63,25 @@ function CartPage() {
               <div className="cart-item" key={product.id}>
                 <div className="item-img-box">
                   <img
-                    src={product.imagens?.[0]?.url ? (product.imagens[0].url.startsWith('http') ? product.imagens[0].url : `/api/images/${product.imagens[0].url}`) : 'https://via.placeholder.com/120'}
+                    src={product.imagens?.[0]?.url ? (product.imagens[0].url.startsWith('http') ? product.imagens[0].url : `/api/images/${product.imagens[0].url}`) : 'https://via.placeholder.com/160'}
                     alt={product.nome}
-                    onError={(e) => (e.target.src = 'https://via.placeholder.com/120')}
+                    onError={(e) => (e.target.src = 'https://via.placeholder.com/160')}
                   />
                 </div>
                 <div className="item-info">
                   <div>
                     <Link to={`/produto/${product.id}`} className="item-title">{product.nome}</Link>
+                    <div className="item-seller">SKU: {product.id} • {product.categoria?.nome || '—'}</div>
                   </div>
                   <div className="item-actions">
-                    <button type="button" onClick={() => removeFromCart(product.id)}>Excluir</button>
+                    <button type="button" className="btn-link" onClick={() => removeFromCart(product.id)}>Remover</button>
+                    <button type="button" className="btn-link" onClick={() => { setCouponCode(''); }}>Salvar para depois</button>
                   </div>
                 </div>
 
-                <div className="item-qty-selector">
-                  <button type="button" onClick={() => handleDecrease(product.id)} disabled={quantity <= 1}>-</button>
-                  <input type="number" value={quantity} readOnly />
+                <div className="item-qty-selector modern">
+                  <button type="button" onClick={() => handleDecrease(product.id)} disabled={quantity <= 1}>−</button>
+                  <input type="number" value={quantity} readOnly aria-label={`Quantidade de ${product.nome}`} />
                   <button type="button" onClick={() => handleIncrease(product)}>+</button>
                 </div>
 

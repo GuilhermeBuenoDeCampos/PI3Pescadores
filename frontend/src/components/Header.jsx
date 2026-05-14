@@ -30,6 +30,7 @@ function Header() {
             <span className={styles.cartCount}>{itemCount}</span>
           )}
         </Link>
+        <Link to="/login" className={styles.loginLink} aria-label="Entrar">Entrar</Link>
       </nav>
     </header>
   );
