@@ -6,7 +6,7 @@ import StockManagement from './pages/StockManagement';
 import CartPage from './pages/CartPage';
 import styles from './App.module.css';
 
-// App component defines the two main application pages.
+// Rotas públicas ficam aqui. Ao criar uma página nova, importe em /pages e registre abaixo.
 function App() {
   return (
     <div className={styles.appWrapper}>

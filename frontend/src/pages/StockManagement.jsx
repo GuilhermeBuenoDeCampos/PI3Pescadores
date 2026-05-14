@@ -11,6 +11,9 @@ import logo from '../assets/logo/logo.png';
 import AuditoriaModal from '../components/AuditoriaModal';
 import styles from './StockManagement.module.css';
 
+// Tela administrativa de estoque.
+// Mantém cadastro, edição, movimentação simples, movimentação em massa e auditoria no mesmo fluxo.
+// Ao crescer, extraia primeiro os blocos "single launch" e "mass launch" para componentes próprios.
 const StockManagement = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [isAuditoriaOpen, setIsAuditoriaOpen] = useState(false);
@@ -21,15 +24,15 @@ const StockManagement = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [productFilter, setProductFilter] = useState('');
   const [editProduct, setEditProduct] = useState(null);
-  // Single launch
+  // Lançamento unitário de estoque.
   const [searchTerm, setSearchTerm] = useState('');
   const [launchQuantity, setLaunchQuantity] = useState(0);
   const [singleSuggestions, setSingleSuggestions] = useState([]);
   const [singleSelectedProduct, setSingleSelectedProduct] = useState(null);
   const [singleActiveIndex, setSingleActiveIndex] = useState(-1);
-  // Mass launch
-  const [massItems, setMassItems] = useState([]); // { id_produto, quantidade }
-  // Settings
+  // Lançamento em massa: cada item recebe id_produto e quantidade antes do submit.
+  const [massItems, setMassItems] = useState([]);
+  // Preferência local da tela administrativa, não regra global do backend.
   const [autoDisableZeroStock, setAutoDisableZeroStock] = useState(() => {
     try {
       const saved = localStorage.getItem('autoDisableZeroStock');
@@ -57,13 +60,11 @@ const StockManagement = () => {
     loadData();
   }, []);
 
-  // Auto-desativar produtos com estoque zero
   useEffect(() => {
     const autoDisableProducts = async () => {
       if (!autoDisableZeroStock || !Array.isArray(products)) return;
 
       for (const product of products) {
-        // Se o produto tem estoque zero e está ativo, desativar
         if (product.estoque_atual === 0 && product.ativo !== false) {
           try {
             await updateProductStatus(product.id, false);
@@ -79,7 +80,7 @@ const StockManagement = () => {
 
   const closeModal = () => {
     setActiveModal(null);
-    setSelectedImages([]); // Limpa as imagens ao fechar
+    setSelectedImages([]);
   };
 
   const handleDragOver = (e) => {
@@ -129,9 +130,8 @@ const StockManagement = () => {
     e.preventDefault();
     const formData = new FormData(e.target);
     
-    // Acrescentar as imagens arrastadas/adicionadas
-    // O backend multer recebe o arquivo no campo 'imagens'
-    formData.delete('imagens'); // Remove caso já exista algo no form nativamente
+    // O backend espera todos os arquivos no campo multipart "imagens".
+    formData.delete('imagens');
     selectedImages
       .filter((img) => img.file instanceof File)
       .forEach((img) => {
@@ -141,7 +141,7 @@ const StockManagement = () => {
     try {
       let response;
       if (editProduct && editProduct.id) {
-        // use POST to update when sending multipart FormData from the browser
+        // POST é mantido para edição multipart porque alguns clientes lidam mal com PUT + FormData.
         response = await fetch(`${BACKEND_URL}/api/produtos/${editProduct.id}`, {
           method: 'POST',
           body: formData,
@@ -168,7 +168,7 @@ const StockManagement = () => {
       alert('Produto salvo com sucesso!');
       setEditProduct(null);
       closeModal();
-      loadData(); // Recarrega a listagem de produtos
+      loadData();
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar produto! ' + (err.message || ''));
@@ -192,7 +192,7 @@ const StockManagement = () => {
 
       alert('Categoria salva com sucesso!');
       setNewCategoryName('');
-      loadData(); // Recarrega listagem de categorias
+      loadData();
     } catch (err) {
       console.error(err);
       alert('Erro ao salvar categoria!');

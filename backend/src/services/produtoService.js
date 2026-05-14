@@ -4,18 +4,19 @@ const AppError = require('../middlewares/appError');
 const ALLOWED_MOVEMENT_TYPES = new Set(['entrada', 'saida']);
 const ALLOWED_MOVEMENT_REASONS = new Set(['compra', 'venda', 'ajuste']);
 
-// Utility function to generate slug from product name for URL-friendly routing
+// Slug usado pela rota pública /produto-nome/:nome. Se criar coluna slug no banco,
+// mantenha esta normalização compatível para não quebrar links antigos.
 function generateSlug(nome) {
   if (!nome || typeof nome !== 'string') return '';
   
   return nome
     .toLowerCase()
     .trim()
-    .normalize('NFD')                          // Decompose accented characters
-    .replace(/[\u0300-\u036f]/g, '')           // Remove accent marks
-    .replace(/[^a-z0-9\s-]/g, '')              // Remove non-alphanumeric except spaces/hyphens
-    .replace(/[\s_-]+/g, '-')                  // Replace spaces/underscores with hyphens
-    .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function toNumberOrNull(value) {
@@ -31,7 +32,7 @@ function toNumberOrNull(value) {
 function formatDecimal(value, scale) {
   const n = toNumberOrNull(value);
   if (n === null) return null;
-  // Use toFixed to produce a string with the desired scale and avoid floating artifacts
+  // Sequelize/Postgres decimal fields are stored as strings; this avoids floating artifacts.
   return n.toFixed(scale);
 }
 
@@ -66,6 +67,11 @@ function calcularEstoqueAtual(movimentacoes) {
   }, 0);
 }
 
+function normalizeImageUrl(url) {
+  if (!url) return '';
+  return String(url).trim().replace(/[\r\n\t]/g, '');
+}
+
 function formatarCampoNumerico(campo, scale) {
   if (campo === null || campo === undefined) return null;
   return String(Number(campo).toFixed(scale));
@@ -97,26 +103,9 @@ function toProdutoPayload(produto) {
         }
       : null,
     imagens: imagens.map((imagem) => {
-      // Normalize image URL: trim and remove any internal whitespace/newlines
-      const rawUrl = imagem.url || '';
-      let sanitized = String(rawUrl).trim().replace(/\s+/g, '');
-
-      // If it's a Supabase signed URL, convert to the public object URL and remove query params
-      // Example signed: https://<project>.supabase.co/storage/v1/object/sign/<bucket>/<path>?token=...
-      // Public URL:   https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
-      try {
-        const signMarker = '/storage/v1/object/sign/';
-        const publicMarker = '/storage/v1/object/public/';
-        if (sanitized.includes(signMarker)) {
-          const parts = sanitized.split('?')[0]; // drop token
-          sanitized = parts.replace(signMarker, publicMarker);
-        }
-      } catch (e) {
-        // if anything goes wrong, fall back to the sanitized value
-      }
       return {
         id: imagem.id,
-        url: sanitized,
+        url: normalizeImageUrl(imagem.url),
         criado_em: imagem.criado_em,
       };
     }),
@@ -224,15 +213,14 @@ exports.buscarProdutoPorId = async (id) => {
 };
 
 exports.buscarProdutoPorNome = async (nome) => {
-  // Create slug from the provided name to match against product names
   const slug = generateSlug(nome);
   
   if (!slug) {
     throw new AppError(400, 'Invalid product name');
   }
 
-  // Fetch all products and find the one matching the slug
-  // (could be optimized with a database search if product names are indexed)
+  // Sem coluna slug no banco, a comparação precisa carregar produtos e normalizar em memória.
+  // Se o catálogo crescer, crie uma coluna/index de slug e substitua este trecho.
   const produtos = await db.Produto.findAll({
     include: [
       {
@@ -275,7 +263,7 @@ exports.criarProduto = async (payload) => {
   const largura = formatDecimal(payload.largura, 3);
   const profundidade = formatDecimal(payload.profundidade, 3);
   
-  // se for array de categorias (ex: multi-select no front), pega a primeira
+  // Compatibilidade com forms antigos que enviavam categoria como array ou CSV.
   let idCategoria = payload.id_categoria;
   if (Array.isArray(idCategoria)) {
     idCategoria = parseInt(idCategoria[0], 10);
@@ -438,7 +426,7 @@ exports.atualizarProduto = async (idProduto, payload) => {
     }, { transaction });
 
     if (imagens && imagens.length > 0) {
-      // replace existing images with new ones
+      // Atualização com novas imagens substitui a galeria inteira do produto.
       await db.ProdutoImagem.destroy({ where: { id_produto: produtoModel.id }, transaction });
       await db.ProdutoImagem.bulkCreate(imagens.map(url => ({ id_produto: produtoModel.id, url, criado_em: now })), { transaction });
     }
@@ -466,30 +454,44 @@ exports.registrarMovimentacao = async (idProduto, payload) => {
     throw new AppError(400, 'quantidade must be a positive integer');
   }
 
-  const produto = await buscarProdutoModelPorId(idProduto);
-  const estoqueAtual = await calcularEstoqueProduto(produto.id);
+  return db.sequelize.transaction(async (transaction) => {
+    // Lock pessimista: duas saídas simultâneas não podem ler o mesmo saldo e deixar estoque negativo.
+    const produto = await db.Produto.findByPk(idProduto, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
 
-  if (tipo === 'saida' && quantidade > estoqueAtual) {
-    throw new AppError(400, 'insufficient stock for this movement');
-  }
+    if (!produto) {
+      throw new AppError(404, 'Produto not found');
+    }
 
-  const movimentacao = await db.EstoqueMovimentacao.create({
-    id_produto: produto.id,
-    tipo,
-    quantidade,
-    motivo,
-    created_at: new Date(),
+    const estoqueAtual = await calcularEstoqueProduto(produto.id, transaction);
+
+    if (tipo === 'saida' && quantidade > estoqueAtual) {
+      throw new AppError(400, 'insufficient stock for this movement');
+    }
+
+    const movimentacao = await db.EstoqueMovimentacao.create(
+      {
+        id_produto: produto.id,
+        tipo,
+        quantidade,
+        motivo,
+        created_at: new Date(),
+      },
+      { transaction }
+    );
+
+    return {
+      id: movimentacao.id,
+      id_produto: movimentacao.id_produto,
+      tipo: movimentacao.tipo,
+      quantidade: movimentacao.quantidade,
+      motivo: movimentacao.motivo,
+      created_at: movimentacao.created_at,
+      estoque_atual: tipo === 'entrada' ? estoqueAtual + quantidade : estoqueAtual - quantidade,
+    };
   });
-
-  return {
-    id: movimentacao.id,
-    id_produto: movimentacao.id_produto,
-    tipo: movimentacao.tipo,
-    quantidade: movimentacao.quantidade,
-    motivo: movimentacao.motivo,
-    created_at: movimentacao.created_at,
-    estoque_atual: tipo === 'entrada' ? estoqueAtual + quantidade : estoqueAtual - quantidade,
-  };
 };
 
 exports.registrarMovimentacoesEmMassa = async (payload) => {
@@ -510,7 +512,6 @@ exports.registrarMovimentacoesEmMassa = async (payload) => {
     created_at: m.created_at ? new Date(m.created_at) : new Date(),
   }));
 
-  // Basic validation
   for (const m of movimentacoes) {
     if (!Number.isInteger(m.id_produto) || m.id_produto <= 0) {
       throw new AppError(400, 'each movimentacao must have a valid id_produto');
@@ -526,15 +527,32 @@ exports.registrarMovimentacoesEmMassa = async (payload) => {
     }
   }
 
-  // Run in transaction and ensure products exist and do not allow negative stock on 'saida'
   const results = [];
 
   await db.sequelize.transaction(async (transaction) => {
-    for (const m of movimentacoes) {
-      const produto = await db.Produto.findByPk(m.id_produto, { transaction });
-      if (!produto) {
-        throw new AppError(404, `Produto not found: ${m.id_produto}`);
+    const idsProduto = [...new Set(movimentacoes.map((m) => m.id_produto))].sort((a, b) => a - b);
+    // Bloqueio em ordem fixa evita deadlocks quando o lançamento em massa toca vários produtos.
+    const produtosBloqueados = await db.Produto.findAll({
+      where: {
+        id: {
+          [db.Sequelize.Op.in]: idsProduto,
+        },
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+      order: [['id', 'ASC']],
+    });
+
+    const produtosPorId = new Map(produtosBloqueados.map((produto) => [Number(produto.id), produto]));
+
+    for (const idProduto of idsProduto) {
+      if (!produtosPorId.has(idProduto)) {
+        throw new AppError(404, `Produto not found: ${idProduto}`);
       }
+    }
+
+    for (const m of movimentacoes) {
+      const produto = produtosPorId.get(m.id_produto);
 
       const estoqueAtual = await calcularEstoqueProduto(produto.id, transaction);
 

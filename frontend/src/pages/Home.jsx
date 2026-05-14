@@ -101,14 +101,6 @@ function Home() {
     [products, activeCategory, searchQuery, minPrice, maxPrice, sortOrder]
   );
 
-  const visibleCategories = categories.filter((category) => category !== 'Todos').slice(0, 5);
-  const totalProducts = products.length;
-
-  const getCategoryCount = (category) =>
-    products.filter(
-      (product) => normalizeCategory(product.categoria?.nome) === normalizeCategory(category)
-    ).length;
-
   function handleSearchSubmit(event) {
     event.preventDefault();
     setSearchQuery(searchText);

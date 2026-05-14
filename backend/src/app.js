@@ -26,6 +26,8 @@ function configureCors(allowedOrigins) {
 
 const app = express();
 
+// Cada ambiente deve liberar explicitamente o frontend que consome a API.
+// Ao trocar domínio ou porta, ajuste FRONTEND_URL/API_URL no .env antes de mexer aqui.
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.API_URL,
@@ -41,6 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(configureCors(allowedOrigins));
 
+// Uploads locais são fallback quando Supabase não está configurado ou indisponível.
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/health', (req, res) => {

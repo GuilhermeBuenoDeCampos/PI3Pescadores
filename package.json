@@ -6,7 +6,10 @@
     "dev": "npx concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:backend": "npm --prefix backend start",
     "dev:frontend": "npm --prefix frontend run dev",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "test": "npm --prefix backend test",
+    "build": "npm --prefix frontend run build",
+    "lint": "find backend/src backend/test -name '*.js' -print0 | xargs -0 -n1 node --check && npm --prefix frontend run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

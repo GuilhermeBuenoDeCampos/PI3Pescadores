@@ -5,7 +5,7 @@ const CartContext = createContext();
 const STORAGE_KEY = 'tp_cart_v1';
 
 const initialState = {
-  items: [], // { product, quantity }
+  items: [],
 };
 
 function loadInitialState() {
@@ -58,8 +58,6 @@ function cartReducer(state, action) {
         items: state.items.filter(item => item.product.id !== action.productId),
       };
     }
-    case 'CLEAR_CART':
-      return initialState;
     default:
       return state;
   }
@@ -68,7 +66,7 @@ function cartReducer(state, action) {
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, undefined, () => loadInitialState());
 
-  // persist to localStorage on change
+  // Carrinho é local ao navegador; não há reserva de estoque até o pedido ser enviado.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -80,10 +78,9 @@ export function CartProvider({ children }) {
   const addToCart = product => dispatch({ type: 'ADD_TO_CART', product });
   const decreaseQuantity = productId => dispatch({ type: 'DECREASE_QUANTITY', productId });
   const removeFromCart = productId => dispatch({ type: 'REMOVE_FROM_CART', productId });
-  const clearCart = () => dispatch({ type: 'CLEAR_CART' });
 
   return (
-    <CartContext.Provider value={{ cart: state, addToCart, decreaseQuantity, removeFromCart, clearCart }}>
+    <CartContext.Provider value={{ cart: state, addToCart, decreaseQuantity, removeFromCart }}>
       {children}
     </CartContext.Provider>
   );

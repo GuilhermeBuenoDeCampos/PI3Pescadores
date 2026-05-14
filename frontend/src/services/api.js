@@ -1,16 +1,5 @@
-/**
- * API Configuration & Utilities
- * 
- * Gerencia todas as chamadas HTTP para o backend
- * Centraliza a URL base para facilitar mudanças entre dev/produção
- * 
- * IMPORTANTE: Para produção, configurar VITE_BACKEND_URL no .env
- * Exemplo .env:
- * - DEV: VITE_BACKEND_URL=http://localhost:3000
- * - PROD: VITE_BACKEND_URL=https://api.seudominio.com
- */
-
-// URL base do backend - Configurável via variáveis de ambiente
+// Centraliza o contrato HTTP usado pelo frontend.
+// Para trocar backend em produção, defina VITE_BACKEND_URL sem barra final.
 export const BACKEND_URL =
   (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
@@ -25,36 +14,12 @@ async function parseApiError(response, fallbackMessage) {
   }
 }
 
-/**
- * Constrói URL completa para imagens
- * Lida com três casos:
- * 1. URL vazia/null → retorna vazio
- * 2. URL completa (http/https) → retorna como está
- * 3. Caminho relativo → prepende BACKEND_URL
- * 
- * Exemplo:
- * getImageUrl('/uploads/Banner/imagem.jpg') 
- * → 'http://localhost:3000/uploads/Banner/imagem.jpg'
- * 
- * @param {string} url - URL ou caminho da imagem
- * @returns {string} URL completa da imagem
- */
 export function getImageUrl(url) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  // ensure we don't accidentally join without a slash: handle 'uploads/img.jpg' and '/uploads/img.jpg'
   const normalized = url.startsWith('/') ? url : `/${url}`;
   return `${BACKEND_URL}${normalized}`;
 }
-
-
-/**
- * Busca produtos com filtros opcionais
- * 
- * @param {Object} filters - Filtros (category, active, etc)
- * @returns {Promise<Array>} Lista de produtos
- * @throws {Error} Se falhar requisição
- */
 export async function fetchProducts(filters = {}) {
   const params = new URLSearchParams();
   
@@ -154,26 +119,6 @@ export async function salvarAuditoria(auditorias) {
   const result = await response.json();
   return result.data;
 }
-
-/**
- * Busca histórico de auditorias
- * 
- * @param {number} page - Número da página
- * @param {number} limit - Quantidade por página
- * @returns {Promise<Object>} Histórico com paginação
- * @throws {Error} Se falhar requisição
- */
-export async function fetchHistoricoAuditoria(page = 1, limit = 10) {
-  const response = await fetch(`${API_URL}/auditoria/historico?page=${page}&limit=${limit}`);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch audit history: ${response.statusText}`);
-  }
-
-  const result = await response.json();
-  return result;
-}
-
 
 /**
  * Busca todas as categorias de produtos

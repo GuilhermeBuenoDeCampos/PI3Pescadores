@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import Header from '../components/Header';
@@ -8,11 +7,8 @@ import { getImageUrl } from '../services/api';
 import { formatPrice } from '../utils/productUtils';
 
 function CartPage() {
-  const { cart, removeFromCart, clearCart, addToCart, decreaseQuantity } = useCart();
-  const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
+  const { cart, removeFromCart, addToCart, decreaseQuantity } = useCart();
 
-  // Usar itens do cart
   const displayItems = Array.isArray(cart.items) ? cart.items : [];
 
   const handleIncrease = (product) => {
@@ -34,19 +30,8 @@ function CartPage() {
     return total + price * item.quantity;
   }, 0);
 
-  const shipping = 0; // Frete grátis no momento
-  const total = subtotal + shipping - couponDiscount;
-  
+  const total = subtotal;
   const totalItems = displayItems.reduce((total, item) => total + item.quantity, 0);
-  const applyCoupon = () => {
-    if (couponCode.toLowerCase() === 'desc10') {
-      setCouponDiscount(subtotal * 0.1);
-      alert('Cupom aplicado com 10% de desconto!');
-    } else {
-      alert('Cupom inválido');
-      setCouponDiscount(0);
-    }
-  };
 
   const buildWhatsAppMessage = () => {
     const productLines = displayItems.map(({ product, quantity }) => {

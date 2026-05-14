@@ -20,7 +20,6 @@ import styles from './BannerCarousel.module.css';
 function BannerCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
-  const [failedImages, setFailedImages] = useState(new Set());
 
   const totalImages = BANNER_IMAGES.length;
   
@@ -82,15 +81,9 @@ function BannerCarousel() {
    * Pula para próxima imagem válida se houver
    */
   const handleImageError = useCallback((index) => {
-    setFailedImages((prev) => new Set([...prev, index]));
-    
-    // Tenta próxima imagem
     handleNext();
   }, [handleNext]);
 
-  /**
-   * Encontra próxima imagem válida (sem erro)
-   */
   const currentImage = BANNER_IMAGES[currentIndex];
   const imagePath = getBannerImagePath(currentImage.filename);
   const imageUrl = getImageUrl(imagePath);

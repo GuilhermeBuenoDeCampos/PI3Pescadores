@@ -170,11 +170,6 @@ body {
   font-weight: 700;
 }
 
-.shipping-free {
-  color: var(--tp-teal);
-  font-weight: 600;
-}
-
 /* Botão Amarelo de Checkout */
 .btn-checkout {
   width: 100%;

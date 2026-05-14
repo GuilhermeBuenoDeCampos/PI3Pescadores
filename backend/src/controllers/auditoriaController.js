@@ -1,5 +1,4 @@
 const asyncHandler = require('../utils/asyncHandler');
-const produtoService = require('../services/produtoService');
 const db = require('../database/models');
 
 // Get 5 random products for audit

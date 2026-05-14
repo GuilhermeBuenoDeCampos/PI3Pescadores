@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import * as api from '../services/api';
 import styles from './AuditoriaModal.module.css';
 
-export default function AuditoriaModal({ isOpen, onClose, onSave }) {
+export default function AuditoriaModal({ isOpen, onClose }) {
   const [produtos, setProdutos] = useState([]);
   const [auditorias, setAuditorias] = useState([]);
   const [loading, setLoading] = useState(false);

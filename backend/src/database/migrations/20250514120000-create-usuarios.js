@@ -50,9 +50,7 @@ module.exports = {
       },
     });
 
-    // Criar índices para melhor performance
-    await queryInterface.addIndex('usuarios', ['email']);
-    await queryInterface.addIndex('usuarios', ['cpf']);
+    // email and cpf already receive unique indexes from their column definitions.
     await queryInterface.addIndex('usuarios', ['tipo_usuario']);
   },
 

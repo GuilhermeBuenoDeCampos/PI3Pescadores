@@ -6,6 +6,7 @@
     "start": "node index.js",
     "dev": "node index.js",
     "test": "node test/run-tests.js",
+    "test:concurrency": "node test/run-concurrency-tests.js",
     "sequelize": "sequelize",
     "db:migrate": "sequelize db:migrate",
     "db:migrate:undo": "sequelize db:migrate:undo",
@@ -16,7 +17,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
+    "@supabase/supabase-js": "^2.75.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.1.1",
