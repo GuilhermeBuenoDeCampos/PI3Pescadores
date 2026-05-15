@@ -154,7 +154,7 @@
   min-height: 240px;
   background:
     linear-gradient(rgba(30, 24, 16, 0.38), rgba(30, 24, 16, 0.48)),
-    url('http://localhost:3000/uploads/img/acuracidade.jpeg') center / cover;
+    url('https://pi3pescadores.onrender.com/uploads/img/acuracidade.jpeg') center / cover;
   color: #ffffff;
   align-self: start;
   overflow: hidden;

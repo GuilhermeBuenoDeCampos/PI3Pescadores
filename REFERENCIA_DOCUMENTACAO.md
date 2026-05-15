@@ -284,7 +284,7 @@ cp minha-imagem.jpg backend/uploads/Banner/
 ### Card 3: Mudar Configuração
 ```javascript
 // Abrir frontend/.env
-VITE_BACKEND_URL=http://localhost:3000  // Mude aqui
+VITE_BACKEND_URL=https://pi3pescadores.onrender.com  // Mude aqui
 
 // Auto-reload da página
 // Pronto!

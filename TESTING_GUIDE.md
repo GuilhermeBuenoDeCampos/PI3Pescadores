@@ -246,7 +246,7 @@ Tab → Tab → Tab → Deve destacar botões
 ```javascript
 // F12 → Network
 // Ao carregar imagem, deve ser:
-// GET http://localhost:3000/uploads/Banner/Aparecida.jpg
+// GET https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 
 // Verificar em Console:
 import { getImageUrl } from './src/services/api.js';
@@ -256,7 +256,7 @@ const path = getBannerImagePath('Aparecida.jpg');
 console.log('Path:', path); // /uploads/Banner/Aparecida.jpg
 
 const url = getImageUrl(path);
-console.log('URL:', url); // http://localhost:3000/uploads/Banner/Aparecida.jpg
+console.log('URL:', url); // https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 ```
 
 ---
@@ -325,7 +325,7 @@ React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactDebugCurrentOwner;
 
 ```javascript
 // F12 → Console
-import.meta.env.VITE_BACKEND_URL // Deve ser http://localhost:3000
+import.meta.env.VITE_BACKEND_URL // Deve ser https://pi3pescadores.onrender.com
 import.meta.env.VITE_DEBUG        // Deve ser true
 ```
 
@@ -348,7 +348,7 @@ import.meta.env.VITE_DEBUG        // Deve ser true
 
 **Solução 1: Backend rodando?**
 ```bash
-curl http://localhost:3000/health
+curl https://pi3pescadores.onrender.com/health
 # Deve retornar: {"ok":true,"service":"pi3-pescadores-backend",...}
 ```
 
@@ -360,7 +360,7 @@ ls -la backend/uploads/Banner/
 
 **Solução 3: CORS ativado?**
 ```bash
-curl -H "Origin: http://localhost:5173" http://localhost:3000/uploads/Banner/Aparecida.jpg
+curl -H "Origin: http://localhost:5173" https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 # Deve retornar imagem com status 200
 ```
 

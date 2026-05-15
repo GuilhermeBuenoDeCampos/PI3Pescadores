@@ -20,8 +20,8 @@
 ```jsx
 // ❌ CÓDIGO ORIGINAL - Problema!
 const bannerImages = [
-  'http://localhost:3000/uploads/Banner/Castical-Flor-Dourado-NSA.png',
-  'http://localhost:3000/uploads/Banner/Crucifixo-Coracao-de-Jesus.png',
+  'https://pi3pescadores.onrender.com/uploads/Banner/Castical-Flor-Dourado-NSA.png',
+  'https://pi3pescadores.onrender.com/uploads/Banner/Crucifixo-Coracao-de-Jesus.png',
   // ...
 ];
 ```
@@ -124,7 +124,7 @@ export const getBannerImagePath = (filename) => `/uploads/Banner/${filename}`;
 ```javascript
 // ✅ NOVO: frontend/src/services/api.js
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  import.meta.env.VITE_BACKEND_URL || 'https://pi3pescadores.onrender.com';
 
 export function getImageUrl(url) {
   if (!url) return '';
@@ -135,7 +135,7 @@ export function getImageUrl(url) {
 
 **Fluxo:**
 ```
-1. Dev cria .env: VITE_BACKEND_URL=http://localhost:3000
+1. Dev cria .env: VITE_BACKEND_URL=https://pi3pescadores.onrender.com
 2. Vite injeta no build
 3. Code acessa via import.meta.env.VITE_BACKEND_URL
 4. Produ muda .env.production: VITE_BACKEND_URL=https://api.com
@@ -223,7 +223,7 @@ export const getBannerImagePath = (filename) => `/uploads/Banner/${filename}`;
 ```javascript
 // frontend/src/services/api.js
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  import.meta.env.VITE_BACKEND_URL || 'https://pi3pescadores.onrender.com';
 
 export function getImageUrl(url) {
   if (!url) return '';                    // Guard 1: Null safety
@@ -699,12 +699,12 @@ import { useState, useEffect } from 'react';
 import styles from './BannerCarousel.module.css';
 
 const bannerImages = [
-  'http://localhost:3000/uploads/Banner/Castical-Flor-Dourado-NSA.png', // ❌
-  'http://localhost:3000/uploads/Banner/Crucifixo-Coracao-de-Jesus.png', // ❌
-  'http://localhost:3000/uploads/Banner/Escultura-Tres-Pescadores.png', // ❌
-  'http://localhost:3000/uploads/Banner/Mini-Oratorio-Branco-NSA.png', // ❌
-  'http://localhost:3000/uploads/Banner/Mini-Oratorio-Dourado-NSA.png', // ❌
-  'http://localhost:3000/uploads/Banner/NSA-Manto-Azul.png' // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/Castical-Flor-Dourado-NSA.png', // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/Crucifixo-Coracao-de-Jesus.png', // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/Escultura-Tres-Pescadores.png', // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/Mini-Oratorio-Branco-NSA.png', // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/Mini-Oratorio-Dourado-NSA.png', // ❌
+  'https://pi3pescadores.onrender.com/uploads/Banner/NSA-Manto-Azul.png' // ❌
 ];
 
 function BannerCarousel() {

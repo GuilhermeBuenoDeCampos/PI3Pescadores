@@ -29,7 +29,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.API_URL,
-  'http://localhost:3000',
+  'https://pi3pescadores.onrender.com',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5173',

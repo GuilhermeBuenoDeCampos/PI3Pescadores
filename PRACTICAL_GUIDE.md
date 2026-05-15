@@ -74,7 +74,7 @@ export default ProductCard;
 getImageUrl('/uploads/products/produto1.jpg')
 
 // Output (dev)
-'http://localhost:3000/uploads/products/produto1.jpg'
+'https://pi3pescadores.onrender.com/uploads/products/produto1.jpg'
 
 // Output (prod)
 'https://api.pescadores.com/uploads/products/produto1.jpg'
@@ -249,7 +249,7 @@ console.log('BACKEND_URL:', BACKEND_URL);
 
 **Dev - `frontend/.env`**
 ```
-VITE_BACKEND_URL=http://localhost:3000
+VITE_BACKEND_URL=https://pi3pescadores.onrender.com
 VITE_DEBUG=true
 ```
 
@@ -347,7 +347,7 @@ performance.getEntriesByName('banner-load-end')[0].duration // ms
    const url = getImageUrl(path);
    
    // ❌ Errado
-   const url = 'http://localhost:3000/uploads/...';
+   const url = 'https://pi3pescadores.onrender.com/uploads/...';
    ```
 
 3. **Usar dados de constantes**
@@ -367,10 +367,10 @@ performance.getEntriesByName('banner-load-end')[0].duration // ms
 **Aprendizado:** Sempre use variáveis de ambiente
 ```javascript
 // ❌ Nunca
-const api = 'http://localhost:3000';
+const api = 'https://pi3pescadores.onrender.com';
 
 // ✅ Sempre
-const api = process.env.REACT_APP_API || 'http://localhost:3000';
+const api = process.env.REACT_APP_API || 'https://pi3pescadores.onrender.com';
 ```
 
 ### Problema 2: Imagens Não Sincronizadas

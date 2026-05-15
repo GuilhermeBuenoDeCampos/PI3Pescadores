@@ -79,8 +79,8 @@ Backend
 ### Antes
 ```jsx
 const bannerImages = [
-  'http://localhost:3000/uploads/Banner/Castical-Flor-Dourado-NSA.png', // ❌ Não existe!
-  'http://localhost:3000/uploads/Banner/Crucifixo-Coracao-de-Jesus.png'  // ❌ Não existe!
+  'https://pi3pescadores.onrender.com/uploads/Banner/Castical-Flor-Dourado-NSA.png', // ❌ Não existe!
+  'https://pi3pescadores.onrender.com/uploads/Banner/Crucifixo-Coracao-de-Jesus.png'  // ❌ Não existe!
 ];
 
 // Apenas auto-play, sem controles
@@ -180,10 +180,10 @@ npm run dev
 ls -la backend/uploads/Banner/
 
 # 2. Testar servidor
-curl http://localhost:3000/health
+curl https://pi3pescadores.onrender.com/health
 
 # 3. Verificar rota de uploads
-curl http://localhost:3000/uploads/Banner/Aparecida.jpg
+curl https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 
 # 4. Abrir app
 open http://localhost:5173
@@ -286,7 +286,7 @@ R: Sim! WCAG 2.1 Level AA com ARIA labels
 - **Erro:** "Imagens não carregam"
   - Verificar: `backend/uploads/Banner/` tem arquivos?
   - Verificar: Backend rodando em `localhost:3000`?
-  - Console: `curl http://localhost:3000/uploads/Banner/Aparecida.jpg`
+  - Console: `curl https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg`
 
 - **Erro:** "Banner quebrado"
   - Verificar: `.env` tem `VITE_BACKEND_URL`?

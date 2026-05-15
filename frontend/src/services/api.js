@@ -6,12 +6,12 @@
  * 
  * IMPORTANTE: Para produção, configurar VITE_BACKEND_URL no .env
  * Exemplo .env:
- * - DEV: VITE_BACKEND_URL=http://localhost:3000
+ * - DEV: VITE_BACKEND_URL=https://pi3pescadores.onrender.com
  * - PROD: VITE_BACKEND_URL=https://api.seudominio.com
  */
 
 // URL base do backend local
-export const BACKEND_URL = 'http://localhost:3000';
+export const BACKEND_URL = 'https://pi3pescadores.onrender.com';
 
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -91,7 +91,7 @@ export function clearAuthSession() {
  * 
  * Exemplo:
  * getImageUrl('/uploads/Banner/imagem.jpg') 
- * → 'http://localhost:3000/uploads/Banner/imagem.jpg'
+ * → 'https://pi3pescadores.onrender.com/uploads/Banner/imagem.jpg'
  * 
  * @param {string} url - URL ou caminho da imagem
  * @returns {string} URL completa da imagem

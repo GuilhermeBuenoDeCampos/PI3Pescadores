@@ -196,7 +196,7 @@ Backend (Express + Node.js)
 ### Imagens não carregam?
 ```bash
 # 1. Verificar backend
-curl http://localhost:3000/health
+curl https://pi3pescadores.onrender.com/health
 # Deve retornar: {"ok":true,...}
 
 # 2. Verificar imagens
@@ -204,7 +204,7 @@ ls backend/uploads/Banner/
 # Deve mostrar 6 arquivos JPG
 
 # 3. Verificar CORS
-curl http://localhost:3000/uploads/Banner/Aparecida.jpg
+curl https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 # Deve retornar imagem com status 200
 ```
 

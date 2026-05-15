@@ -44,7 +44,7 @@
 │  │ └────────────────────────────────────────────────────┘ │  │
 │  │                                                         │  │
 │  │ ┌─── .env ──────────────────────────────────────────┐ │  │
-│  │ │ VITE_BACKEND_URL=http://localhost:3000           │ │  │
+│  │ │ VITE_BACKEND_URL=https://pi3pescadores.onrender.com           │ │  │
 │  │ │ VITE_DEBUG=true                                   │ │  │
 │  │ └────────────────────────────────────────────────────┘ │  │
 │  │                                                         │  │
@@ -108,7 +108,7 @@
    ├─ getBannerImagePath('Aparecida.jpg')
    │  → '/uploads/Banner/Aparecida.jpg'
    ├─ getImageUrl('/uploads/Banner/...')
-   │  → 'http://localhost:3000/uploads/Banner/Aparecida.jpg'
+   │  → 'https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg'
    ├─ <img src={url} />
    └─ Backend envia arquivo
    ↓
@@ -319,12 +319,12 @@ constants/banner.js
 ├──────────────────────────────────────────────────────┤
 │                                                      │
 │  Frontend Dev Server           Backend Dev Server    │
-│  http://localhost:5173    ←→   http://localhost:3000 │
+│  http://localhost:5173    ←→   https://pi3pescadores.onrender.com │
 │  (Vite HMR)                    (Express)             │
 │                                                      │
 │  .env:                         uploads/Banner/       │
 │  VITE_BACKEND_URL=             ✅ 6 imagens JPG    │
-│  http://localhost:3000                               │
+│  https://pi3pescadores.onrender.com                               │
 │                                                      │
 └──────────────────────────────────────────────────────┘
                        ↓ npm run build

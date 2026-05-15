@@ -12,7 +12,7 @@ Este documento explica as alterações no sistema de banners realizadas em 10 de
 ```javascript
 // ❌ ANTES - Problema!
 const bannerImages = [
-  'http://localhost:3000/uploads/Banner/Castical-Flor-Dourado-NSA.png',
+  'https://pi3pescadores.onrender.com/uploads/Banner/Castical-Flor-Dourado-NSA.png',
   // ... mais URLs com localhost
 ];
 ```
@@ -83,7 +83,7 @@ const imagePath = getBannerImagePath(BANNER_IMAGES[0].filename);
 ```javascript
 // ✅ DEPOIS - Flexível!
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  import.meta.env.VITE_BACKEND_URL || 'https://pi3pescadores.onrender.com';
 
 export function getImageUrl(url) {
   if (!url) return '';
@@ -103,7 +103,7 @@ export function getImageUrl(url) {
 **Exemplo de uso:**
 ```javascript
 const imagePath = getBannerImagePath('Aparecida.jpg'); // '/uploads/Banner/Aparecida.jpg'
-const fullUrl = getImageUrl(imagePath); // 'http://localhost:3000/uploads/Banner/Aparecida.jpg'
+const fullUrl = getImageUrl(imagePath); // 'https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg'
 ```
 
 **Em Produção:**
@@ -311,7 +311,7 @@ Arquivo enviado ao cliente
 
 **Teste rápido:**
 ```bash
-curl http://localhost:3000/uploads/Banner/Aparecida.jpg
+curl https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 # Deve retornar a imagem se status 200 OK
 ```
 
@@ -441,10 +441,10 @@ VITE_BACKEND_URL=https://api.seudominio.com.br
 ls -la backend/uploads/Banner/
 
 # 2. Verificar se servidor está rodando:
-curl http://localhost:3000/health
+curl https://pi3pescadores.onrender.com/health
 
 # 3. Verificar CORS:
-curl http://localhost:3000/uploads/Banner/Aparecida.jpg
+curl https://pi3pescadores.onrender.com/uploads/Banner/Aparecida.jpg
 # Deve retornar imagem com status 200
 ```
 

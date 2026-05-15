@@ -140,7 +140,7 @@ npm run build
 
 | Aspecto | Antes | Depois |
 |---------|-------|--------|
-| URLs | `http://localhost:3000/...` hardcoded | Configurável via `.env` |
+| URLs | `https://pi3pescadores.onrender.com/...` hardcoded | Configurável via `.env` |
 | Imagens | `.png` não existentes | `.jpg` reais do servidor |
 | Controles | Apenas auto-play | Auto-play + Manual + Dots |
 | Acessibilidade | Não | ARIA labels + Keyboard Nav |
