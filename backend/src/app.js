@@ -1,8 +1,15 @@
 const express = require('express');
+const cors = require("cors");
 const path = require('path');
 const routes = require('./routes');
 const notFound = require('./middlewares/notFound');
 const errorHandler = require('./middlewares/errorHandler');
+
+app.use(cors({
+  origin: "https://pi3pescadores.pages.dev",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 function configureCors(allowedOrigins) {
   return (req, res, next) => {
